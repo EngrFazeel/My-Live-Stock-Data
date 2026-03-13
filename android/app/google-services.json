@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "921881686522",
+    "project_id": "qadeer-49ee8",
+    "storage_bucket": "qadeer-49ee8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:921881686522:android:015af9d3b3926931b4b443",
+        "android_client_info": {
+          "package_name": "com.shoaib"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDIseELPzhBlDoz5C-aqZVPyF6m4I0iUc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
