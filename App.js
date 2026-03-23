@@ -8,6 +8,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Entypo from 'react-native-vector-icons/Entypo';
 
 import Welcome from './Src/Screen/Welcome';
 import Onboard1 from './Src/Onboarding/Onboard1';
@@ -135,36 +136,7 @@ function Drawertab() {
           ),
         }}
       />
-      {/* <Drawer.Screen
-        name="Plan"
-        component={Plan}
-        options={{
-          drawerLabel: 'Plan',
-          drawerIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="clipboard-text-outline" color={'black'} size={size} />
-          ),
-        }}
-      /> */}
-      {/* <Drawer.Screen
-        name="Help"
-        component={Searchcountry}
-        options={{
-          drawerLabel: 'Help',
-          drawerIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="emoticon-happy-outline" color={'black'} size={size} />
-          ),
-        }}
-      /> */}
-      {/* <Drawer.Screen
-        name="Sign Out"
-        component={Searchcountry}
-        options={{
-          drawerLabel: 'Sign Out',
-          drawerIcon: ({ color, size }) => (
-            <Octicons name="sign-in" color={'black'} size={size} />
-          ),
-        }}
-      /> */}
+     
      <Drawer.Screen
         name="Setting"
         component={Setting}
@@ -210,7 +182,7 @@ function Main () {
           <Tab.Screen name="Profile" component={Profile}
         options={{ tabBarIcon:({ color, size })=>(<FontAwesome5 name="user-circle" size={size} color={color}/>)}}/>
           <Tab.Screen name="Chat" component={Chat}
-        options={{ tabBarIcon:({ color, size })=>(<MaterialIcons name="face-man-profile" size={size} color={color}/>)}}/>
+        options={{ tabBarIcon:({ color, size })=>(<Entypo name="chat" size={size} color={color}/>)}}/>
     </Tab.Navigator>
   )
 }
@@ -220,7 +192,7 @@ export default class App extends Component {
     return (
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
-        <Stack.Screen name="Welcome" component={Welcome} />
+        {/* <Stack.Screen name="Welcome" component={Welcome} />
         <Stack.Screen name="Onboard1" component={Onboard1} />
         <Stack.Screen name="Onboard2" component={Onboard2} />
         <Stack.Screen name="Onboard3" component={Onboard3} />
@@ -231,7 +203,7 @@ export default class App extends Component {
         <Stack.Screen name="Signup" component={Signup} />
         <Stack.Screen name="Result" component={Result} />
         <Stack.Screen name="Adduser" component={Adduser} />
-        <Stack.Screen name="Guest" component={MyTabs} />
+        <Stack.Screen name="Guest" component={MyTabs} /> */}
         <Stack.Screen name="Home" component={Main} />
         <Stack.Screen name="Home7" component={Drawertab} />
         <Stack.Screen name="Addanimal" component={Addanimal} />
