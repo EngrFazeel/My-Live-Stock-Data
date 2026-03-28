@@ -15,7 +15,8 @@ export default class Guest extends Component {
         style={{
           fontSize:16,
           fontWeight:'600',
-          color:color.Secondry
+          color:color.Secondry,
+          textAlign:'center'
         }}>Thank you for using this app. Please scan the animal’s nose, and its data will appear here.</Text>
       </View>
     )
