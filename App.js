@@ -8,6 +8,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Entypo from 'react-native-vector-icons/Entypo';
 
 import Welcome from './Src/Screen/Welcome';
 import Onboard1 from './Src/Onboarding/Onboard1';
@@ -29,7 +30,17 @@ import Settings from './Src/Screen/Settings';
 import Chat from './Src/Screen/Chat';
 import Addanimal from './Src/Screen/Addanimal';
 import Scansave from './Src/Screen/Scansave';
-import Sale from './Src/Screen/Sale';
+
+
+
+
+import Sale from './Src/Screen/Drawar/Sale';
+import AppInfo from './Src/Screen/Drawar/AppInfo';
+import Contactus from './Src/Screen/Drawar/Contactus';
+import Editprofile from './Src/Screen/Drawar/Editprofile';
+import PrivacyPolicy from './Src/Screen/Drawar/PrivacyPolicy';
+import TermsCondition from './Src/Screen/Drawar/TermsCondition';
+import Setting3 from './Src/Screen/Drawar/Setting3';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
@@ -210,7 +221,7 @@ function Main () {
           <Tab.Screen name="Profile" component={Profile}
         options={{ tabBarIcon:({ color, size })=>(<FontAwesome5 name="user-circle" size={size} color={color}/>)}}/>
           <Tab.Screen name="Chat" component={Chat}
-        options={{ tabBarIcon:({ color, size })=>(<MaterialIcons name="face-man-profile" size={size} color={color}/>)}}/>
+        options={{ tabBarIcon:({ color, size })=>(<Entypo name="chat" size={size} color={color}/>)}}/>
     </Tab.Navigator>
   )
 }
@@ -236,7 +247,23 @@ export default class App extends Component {
         <Stack.Screen name="Home7" component={Drawertab} />
         <Stack.Screen name="Addanimal" component={Addanimal} />
         <Stack.Screen name="Scansave" component={Scansave} />
+
+
+
+
+
+
+        {/* Drawar */}
         <Stack.Screen name="Sale" component={Sale} />
+        <Stack.Screen name="AppInfo" component={AppInfo} />
+        <Stack.Screen name="Contactus" component={Contactus} />
+        <Stack.Screen name="Editprofile" component={Editprofile} />
+        <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
+        <Stack.Screen name="TermsCondition" component={TermsCondition} />
+        <Stack.Screen name="Setting3" component={Setting3} />
+
+
+
         </Stack.Navigator>
       </NavigationContainer>
     )
