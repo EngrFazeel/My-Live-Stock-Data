@@ -30,7 +30,17 @@ import Settings from './Src/Screen/Settings';
 import Chat from './Src/Screen/Chat';
 import Addanimal from './Src/Screen/Addanimal';
 import Scansave from './Src/Screen/Scansave';
-import Sale from './Src/Screen/Sale';
+
+
+
+
+import Sale from './Src/Screen/Drawar/Sale';
+import AppInfo from './Src/Screen/Drawar/AppInfo';
+import Contactus from './Src/Screen/Drawar/Contactus';
+import Editprofile from './Src/Screen/Drawar/Editprofile';
+import PrivacyPolicy from './Src/Screen/Drawar/PrivacyPolicy';
+import TermsCondition from './Src/Screen/Drawar/TermsCondition';
+import Setting3 from './Src/Screen/Drawar/Setting3';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
@@ -208,7 +218,23 @@ export default class App extends Component {
         <Stack.Screen name="Home7" component={Drawertab} />
         <Stack.Screen name="Addanimal" component={Addanimal} />
         <Stack.Screen name="Scansave" component={Scansave} />
+
+
+
+
+
+
+        {/* Drawar */}
         <Stack.Screen name="Sale" component={Sale} />
+        <Stack.Screen name="AppInfo" component={AppInfo} />
+        <Stack.Screen name="Contactus" component={Contactus} />
+        <Stack.Screen name="Editprofile" component={Editprofile} />
+        <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
+        <Stack.Screen name="TermsCondition" component={TermsCondition} />
+        <Stack.Screen name="Setting3" component={Setting3} />
+
+
+
         </Stack.Navigator>
       </NavigationContainer>
     )
