@@ -6,9 +6,9 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DrawerItemList, createDrawerNavigator } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import Entypo from 'react-native-vector-icons/Entypo';
+import EvilIcons from 'react-native-vector-icons/EvilIcons';
 
 import Welcome from './Src/Screen/Welcome';
 import Onboard1 from './Src/Onboarding/Onboard1';
@@ -177,32 +177,32 @@ function MyTabs () {
   )
 }
 
-function Main () {
-  return(
-    <Tab.Navigator
-    screenOptions={{headerShown:false,tabBarStyle:{backgroundColor:'#1e8527ff',height:50,borderTopRightRadius:20,borderTopLeftRadius:20,},
-    tabBarLabelStyle:{fontSize:15, fontWeight:'600'},
-    tabBarActiveTintColor: "#fff", }}>
-        <Tab.Screen name="Home"  component={Home}
-       options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="home" size={size} color={color} />)}}/>
-        <Tab.Screen name="Settings" component={Settings}
-        options={{ tabBarIcon:({ color, size })=>(<Ionicons name="settings" size={size} color={color}/>)}}/>
-        <Tab.Screen name="Scan" component={Scan}
-        options={{ tabBarIcon:({ color, size })=>(<MaterialCommunityIcons name="line-scan" size={size} color={color}/>)}}/>
-          <Tab.Screen name="Profile" component={Profile}
-        options={{ tabBarIcon:({ color, size })=>(<FontAwesome5 name="user-circle" size={size} color={color}/>)}}/>
-          <Tab.Screen name="Chat" component={Chat}
-        options={{ tabBarIcon:({ color, size })=>(<Entypo name="chat" size={size} color={color}/>)}}/>
-    </Tab.Navigator>
-  )
-}
+// function Main () {
+//   return(
+//     <Tab.Navigator
+//     screenOptions={{headerShown:false,tabBarStyle:{backgroundColor:'#1e8527ff',height:50,borderTopRightRadius:20,borderTopLeftRadius:20,},
+//     tabBarLabelStyle:{fontSize:15, fontWeight:'600'},
+//     tabBarActiveTintColor: "#fff", }}>
+//         <Tab.Screen name="Home"  component={Home}
+//        options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="home" size={size} color={color} />)}}/>
+//         <Tab.Screen name="Settings" component={Settings}
+//         options={{ tabBarIcon:({ color, size })=>(<Ionicons name="settings" size={size} color={color}/>)}}/>
+//         <Tab.Screen name="Scan" component={Scan}
+//         options={{ tabBarIcon:({ color, size })=>(<MaterialCommunityIcons name="line-scan" size={size} color={color}/>)}}/>
+//           <Tab.Screen name="Profile" component={Profile}
+//         options={{ tabBarIcon:({ color, size })=>(<FontAwesome5 name="user-circle" size={size} color={color}/>)}}/>
+//           <Tab.Screen name="Chat" component={Chat}
+//         options={{ tabBarIcon:({ color, size })=>(<Entypo name="chat" size={size} color={color}/>)}}/>
+//     </Tab.Navigator>
+//   )
+// }
 
 export default class App extends Component {
   render() {
     return (
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
-        <Stack.Screen name="Welcome" component={Welcome} />
+        {/* <Stack.Screen name="Welcome" component={Welcome} />
         <Stack.Screen name="Onboard1" component={Onboard1} />
         <Stack.Screen name="Onboard2" component={Onboard2} />
         <Stack.Screen name="Onboard3" component={Onboard3} />
@@ -213,8 +213,7 @@ export default class App extends Component {
         <Stack.Screen name="Signup" component={Signup} />
         <Stack.Screen name="Result" component={Result} />
         <Stack.Screen name="Adduser" component={Adduser} />
-        <Stack.Screen name="Guest" component={MyTabs} />
-        <Stack.Screen name="Home" component={Main} />
+        <Stack.Screen name="Guest" component={MyTabs} /> */}
         <Stack.Screen name="Home7" component={Drawertab} />
         <Stack.Screen name="Addanimal" component={Addanimal} />
         <Stack.Screen name="Scansave" component={Scansave} />
