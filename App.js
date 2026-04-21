@@ -6,12 +6,12 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DrawerItemList, createDrawerNavigator } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import Entypo from 'react-native-vector-icons/Entypo';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import MaterialDesignIcons from 'react-native-vector-icons/MaterialDesignIcons';
 
 
 
@@ -46,6 +46,7 @@ import Editprofile from './Src/Screen/Drawar/Editprofile';
 import PrivacyPolicy from './Src/Screen/Drawar/PrivacyPolicy';
 import TermsCondition from './Src/Screen/Drawar/TermsCondition';
 import Setting3 from './Src/Screen/Drawar/Setting3';
+import AppInfoScreen from './Src/Screen/Drawar/AppInfo';
 
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
@@ -142,23 +143,82 @@ function Drawertab() {
         }}
       />
       <Drawer.Screen
-        name="Show Log"
-        component={Sale}
+        name="Profile"
+        component={Profile}
         options={{
-          drawerLabel: 'Show Log',
+          drawerLabel: 'Profile',
           drawerIcon: ({ size }) => (
-            <AntDesign name="eyeo" color={'black'} size={size} />
+            <Entypo name="user-circle" color={'black'} size={size} />
           ),
         }}
       />
-     
      <Drawer.Screen
-        name="Setting"
-        component={Setting}
+        name="Sale"
+        component={Sale}
         options={{
-          drawerLabel: 'Setting',
+          drawerLabel: 'Sale',
           drawerIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" color={'black'} size={size} />
+            <FontAwesome name="exchange" color={'black'} size={size} />
+          ),
+        }}
+      />
+       <Drawer.Screen
+        name="Scan"
+        component={Scan}
+        options={{
+          drawerLabel: 'Scan',
+          drawerIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="line-scan" color={'black'} size={size} />
+          ),
+        }}
+      />
+         <Drawer.Screen
+        name="AppInfo"
+        component={AppInfo}
+        options={{
+          drawerLabel: 'AppInfo',
+          drawerIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="information-variant-circle-outline" color={'black'} size={size} />
+          ),
+        }}
+      />
+        <Drawer.Screen
+        name="Contactus"
+        component={Contactus}
+        options={{
+          drawerLabel: 'Contactus',
+          drawerIcon: ({ color, size }) => (
+            <MaterialIcons name="contact-emergency" color={'black'} size={size} />
+          ),
+        }}
+      />
+       <Drawer.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicy}
+        options={{
+          drawerLabel: 'PrivacyPolicy',
+          drawerIcon: ({ color, size }) => (
+            <MaterialIcons name="privacy-tip" color={'black'} size={size} />
+          ),
+        }}
+      />
+     <Drawer.Screen
+        name="TermsCondition"
+        component={TermsCondition}
+        options={{
+          drawerLabel: 'TermsCondition',
+          drawerIcon: ({ color, size }) => (
+            <MaterialDesignIcons name="account-check" color={'black'} size={size} />
+          ),
+        }}
+      />
+        <Drawer.Screen
+        name="Logout"
+        component={Login}
+        options={{
+          drawerLabel: 'Logout',
+          drawerIcon: ({ color, size }) => (
+            <MaterialDesignIcons name="logout" color={'black'} size={size} />
           ),
         }}
       />
