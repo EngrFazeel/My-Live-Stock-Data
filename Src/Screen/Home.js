@@ -2,6 +2,8 @@ import React, { Component } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
+// import { color } from "../Color";
+
 
 export default class Home extends Component {
   render() {
@@ -10,9 +12,9 @@ export default class Home extends Component {
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => this.props.navigation.openDrawer()}>
+          {/* <TouchableOpacity onPress={() => this.props.navigation.openDrawer()}>
             <Icon name="menu" size={30} color="#fff" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <Text style={styles.headerTitle}>Home</Text>
 
