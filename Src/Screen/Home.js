@@ -5,6 +5,8 @@ import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
 // import { color } from "../Color";
 
 
+
+
 export default class Home extends Component {
   render() {
     return (
@@ -71,7 +73,6 @@ export default class Home extends Component {
         >
           <Icon name="add" size={30} color="#fff" />
         </TouchableOpacity>
-
       </SafeAreaView>
     );
   }
