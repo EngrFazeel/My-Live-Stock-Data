@@ -9,6 +9,11 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
+import Entypo from 'react-native-vector-icons/Entypo';
+import EvilIcons from 'react-native-vector-icons/EvilIcons';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+
+
 
 import Welcome from './Src/Screen/Welcome';
 import Onboard1 from './Src/Onboarding/Onboard1';
@@ -215,6 +220,10 @@ export default class App extends Component {
         <Stack.Screen name="Adduser" component={Adduser} />
         <Stack.Screen name="Guest" component={MyTabs} /> */}
         <Stack.Screen name="Home7" component={Drawertab} />
+        <Stack.Screen name="Adduser" component={Adduser} /> 
+        {/* <Stack.Screen name="Home" component={MyTabs} /> */}
+        {/* <Stack.Screen name="Home" component={Main} /> */}
+        <Stack.Screen name="Drawertab" component={Drawertab} />
         <Stack.Screen name="Addanimal" component={Addanimal} />
         <Stack.Screen name="Scansave" component={Scansave} />
 

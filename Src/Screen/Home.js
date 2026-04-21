@@ -5,6 +5,9 @@ import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
 
 
 
+
+
+
 export default class Home extends Component {
   render() {
     return (
