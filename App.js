@@ -37,7 +37,6 @@ import Scansave from './Src/Screen/Scansave';
 
 
 
-
 import Sale from './Src/Screen/Drawar/Sale';
 import AppInfo from './Src/Screen/Drawar/AppInfo';
 import Contactus from './Src/Screen/Drawar/Contactus';
