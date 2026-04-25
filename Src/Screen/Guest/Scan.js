@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { launchCamera } from 'react-native-image-picker';
 
+
 export default function CameraScreen({ navigation }) {
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function CameraScreen({ navigation }) {
 
   return (
     <View style={styles.container} />
+    
   );
 }
 

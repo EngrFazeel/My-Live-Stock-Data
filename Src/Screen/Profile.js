@@ -1,13 +1,5 @@
 import React, { Component } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  Image,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import {View,Text,StyleSheet,TextInput,Image,TouchableOpacity,Alert,} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { launchImageLibrary } from 'react-native-image-picker';
 
@@ -50,7 +42,7 @@ export default class UserDetails extends Component {
 
   goBack = () => {
     Alert.alert('Back Pressed');
-    // this.props.navigation.goBack();
+    this.props.navigation.goBack();
   };
 
   renderInput(label, key, icon) {

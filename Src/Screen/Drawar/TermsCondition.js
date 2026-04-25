@@ -8,6 +8,7 @@ import {
   StatusBar,
   TouchableOpacity
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export default class TermsConditions extends Component {
   renderSection(title, content) {
@@ -31,7 +32,7 @@ export default class TermsConditions extends Component {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity>
-            <Text style={styles.backArrow}>←</Text>
+            <Icon name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Term & Conditions</Text>
         </View>
