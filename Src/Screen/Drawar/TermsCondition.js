@@ -1,8 +1,17 @@
 import React, { Component } from 'react';
-import {View,Text,StyleSheet,ScrollView,SafeAreaView,StatusBar,TouchableOpacity} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  SafeAreaView,
+  StatusBar,
+  TouchableOpacity
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export default class TermsConditions extends Component {
+
   renderSection(title, content) {
     return (
       <View style={styles.section}>
@@ -23,10 +32,16 @@ export default class TermsConditions extends Component {
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => this.props.navigation.goBack()}
+          >
             <Icon name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Term & Conditions</Text>
+
+          <Text style={styles.headerTitle}>Terms & Conditions</Text>
+
         </View>
 
         {/* Content */}
@@ -88,47 +103,61 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff'
   },
+
   header: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#6BBF59',
-    padding: 15
+    padding: 15,
+    elevation: 4,
   },
-  backArrow: {
-    color: '#fff',
-    fontSize: 20,
-    marginRight: 10
+
+  backButton: {
+    position: 'absolute',
+    left: 15,
   },
+
   headerTitle: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold'
   },
+
   content: {
     padding: 15
   },
+
   title: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 10
+    marginBottom: 10,
+    color: '#000'
   },
+
   description: {
     fontSize: 14,
     marginBottom: 15,
-    color: '#444'
+    color: '#444',
+    lineHeight: 20
   },
+
   section: {
     marginBottom: 15
   },
+
   sectionTitle: {
     fontWeight: 'bold',
-    fontSize: 14,
-    marginBottom: 5
+    fontSize: 15,
+    marginBottom: 5,
+    color: '#000'
   },
+
   bullet: {
     fontSize: 13,
     color: '#555',
     marginLeft: 5,
-    marginBottom: 3
+    marginBottom: 4,
+    lineHeight: 20
   }
 });

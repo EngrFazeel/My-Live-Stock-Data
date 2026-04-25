@@ -93,10 +93,11 @@ export default class App extends Component {
     return (
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
-        {/* <Stack.Screen name="Welcome" component={Welcome} />
+        <Stack.Screen name="Welcome" component={Welcome} />
         <Stack.Screen name="Onboard1" component={Onboard1} />
         <Stack.Screen name="Onboard2" component={Onboard2} />
         <Stack.Screen name="Onboard3" component={Onboard3} />
+        <Stack.Screen name="Home" component={Main} />
         <Stack.Screen name="Choice" component={Choice} />
         <Stack.Screen name="Category" component={Category} />
         <Stack.Screen name="Category2" component={Category2} />
@@ -104,8 +105,7 @@ export default class App extends Component {
         <Stack.Screen name="Signup" component={Signup} />
         <Stack.Screen name="Result" component={Result} />
         <Stack.Screen name="Adduser" component={Adduser} />
-        <Stack.Screen name="Guest" component={MyTabs} /> */}
-        <Stack.Screen name="Home" component={Main} />
+        <Stack.Screen name="Guest" component={MyTabs} />
         <Stack.Screen name="Addanimal" component={Addanimal} />
         <Stack.Screen name="Scansave" component={Scansave} />
 
