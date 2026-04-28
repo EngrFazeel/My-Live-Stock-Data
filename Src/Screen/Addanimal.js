@@ -1,13 +1,5 @@
 import React, { Component } from 'react';
-import {
-    View,
-    Text,
-    TextInput,
-    Image,
-    TouchableOpacity,
-    StatusBar,
-    ScrollView,
-} from 'react-native';
+import { View, Text, TextInput, Image, TouchableOpacity, StatusBar, ScrollView, } from 'react-native';
 import { color } from '../Color';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -47,11 +39,9 @@ export default class Addanimal extends Component {
     ];
 
     componentDidMount() {
-        // Listen when screen comes into focus
         this.focusListener = this.props.navigation.addListener('focus', () => {
             if (this.props.route.params?.scanImage) {
                 this.setState({ scanImage: this.props.route.params.scanImage });
-                // Clear param to prevent reloading same image
                 this.props.navigation.setParams({ scanImage: null });
             }
         });
@@ -77,13 +67,11 @@ export default class Addanimal extends Component {
                                 Add Animal Details
                             </Text>
                         </View>
-
                         {/* PROFILE IMAGE */}
                         <Image
                             style={{ height: 80, width: 100, borderRadius: 100 }}
                             source={this.state.photo ? { uri: this.state.photo } : require('../Assets/Profile.png')}
                         />
-
                         <TouchableOpacity>
                             <Image
                                 style={{ height: 30, width: 30, borderRadius: 30, marginTop: -30, marginRight: -60, marginLeft: 15 }}
@@ -91,7 +79,6 @@ export default class Addanimal extends Component {
                             />
                         </TouchableOpacity>
                     </View>
-
                     {/* FORM */}
                     <View style={{ height: 520, width: '90%', justifyContent: 'space-around', alignItems: 'center', alignSelf: 'center' }}>
 

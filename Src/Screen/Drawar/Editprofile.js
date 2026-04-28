@@ -146,7 +146,7 @@ export default class EditUserDetail extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EAEAEA',
+    backgroundColor: color.primary,
   },
 
   header: {
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 22,
     fontWeight: 'bold',
-    marginLeft: 15,
+    marginLeft: 80,
   },
 
   imageContainer: {

@@ -8,6 +8,7 @@ import {
   StatusBar,
   TouchableOpacity
 } from 'react-native';
+import { color } from '../../Color';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 export default class TermsConditions extends Component {
@@ -101,14 +102,14 @@ export default class TermsConditions extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor:color.primary
   },
 
   header: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#6BBF59',
+    backgroundColor:color.Secondry ,
     padding: 15,
     elevation: 4,
   },
