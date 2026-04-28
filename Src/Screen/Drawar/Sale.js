@@ -162,7 +162,7 @@ export default class SaleAnimal extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#eee",
+    backgroundColor: color.primary,
     paddingHorizontal: 15
   },
 

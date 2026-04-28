@@ -58,7 +58,7 @@ export default class UserDetails extends Component {
           style={styles.input}
           placeholderTextColor="#333"
         />
-        <Icon name={icon} size={22} color="#4CAF50" />
+        <Icon name={icon} size={25} color= {color.Secondry} />
       </View>
     );
   }
@@ -72,7 +72,7 @@ export default class UserDetails extends Component {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={this.goBack}>
-            <Icon name="arrow-back" size={25} color="#4CAF50" />
+            <Icon name="arrow-back" size={25} color= {color.primary} />
           </TouchableOpacity>
 
           <Text style={styles.title}>User Details</Text>
@@ -115,16 +115,19 @@ export default class UserDetails extends Component {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#eee', paddingHorizontal: 15 },
+  container: { flex: 1, backgroundColor:color.primary, paddingHorizontal: 18 },
 
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
-    alignItems: 'center'
+    alignItems: 'center',
+    height:60,
+    marginLeft: -18,
+    marginRight: -18,
+    backgroundColor:color.Secondry
   },
 
-  title: { fontSize: 22, fontWeight: 'bold', color: color.Secondry },
+  title: { fontSize: 22, fontWeight: 'bold', color: color.primary },
 
   imageContainer: { alignItems: 'center', marginVertical: 15 },
 
