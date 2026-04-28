@@ -6,16 +6,17 @@ import {
   TextInput,
   Image,
   TouchableOpacity,
-  Alert,
+  SafeAreaView
 } from 'react-native';
+
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { launchImageLibrary } from 'react-native-image-picker';
+import FontAwesome from "react-native-vector-icons/FontAwesome";
+import { color } from '../Color';
 
 export default class UserDetails extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isEditing: false,
       image: null,
       user: {
         email: '',
@@ -27,42 +28,33 @@ export default class UserDetails extends Component {
     };
   }
 
-  handleChange = (key, value) => {
-    this.setState({
-      user: { ...this.state.user, [key]: value },
-    });
-  };
+  componentDidUpdate(prevProps) {
+    const newData = this.props.route.params?.updatedUser;
 
-  pickImage = () => {
-    launchImageLibrary({ mediaType: 'photo' }, (response) => {
-      if (response.assets) {
-        this.setState({ image: response.assets[0].uri });
-      }
-    });
-  };
-
-  toggleEdit = () => {
-    if (this.state.isEditing) {
-      Alert.alert('Saved Successfully');
+    if (newData && newData !== prevProps.route.params?.updatedUser) {
+      this.setState({ user: newData });
     }
-    this.setState({ isEditing: !this.state.isEditing });
-  };
+  }
 
   goBack = () => {
-    Alert.alert('Back Pressed');
-    // this.props.navigation.goBack();
+    this.props.navigation.goBack();
+  };
+
+  goToEditScreen = () => {
+    this.props.navigation.navigate('Editprofile', {
+      userData: this.state.user
+    });
   };
 
   renderInput(label, key, icon) {
-    const { user, isEditing } = this.state;
+    const { user } = this.state;
 
     return (
       <View style={styles.inputContainer}>
         <TextInput
           value={user[key]}
-          onChangeText={(text) => this.handleChange(key, text)}
+          editable={false}
           placeholder={label}
-          editable={isEditing}
           style={styles.input}
           placeholderTextColor="#333"
         />
@@ -72,30 +64,32 @@ export default class UserDetails extends Component {
   }
 
   render() {
-    const { image, isEditing } = this.state;
+    const { image } = this.state;
 
     return (
-      <View style={styles.container}>
-        
+      <SafeAreaView style={styles.container}>
+
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={this.goBack}>
-            <Icon name="arrow-back" size={28} color="#4CAF50" />
+            <Icon name="arrow-back" size={25} color="#4CAF50" />
           </TouchableOpacity>
+
           <Text style={styles.title}>User Details</Text>
+
+          <View style={{ width: 25 }} />
         </View>
 
-        {/* Avatar */}
-        <TouchableOpacity onPress={this.pickImage}>
-          <Image
-            source={
-              image
-                ? { uri: image }
-                : { uri: 'https://via.placeholder.com/150' }
-            }
-            style={styles.avatar}
-          />
-        </TouchableOpacity>
+        {/* Profile Image */}
+        <View style={styles.imageContainer}>
+          <View style={styles.profileCircle}>
+            {image ? (
+              <Image source={{ uri: image }} style={styles.profileImage} />
+            ) : (
+              <FontAwesome name="user" size={50} color="#fff" />
+            )}
+          </View>
+        </View>
 
         {/* Inputs */}
         {this.renderInput('Email', 'email', 'email')}
@@ -106,85 +100,80 @@ export default class UserDetails extends Component {
 
         {/* Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={this.goBack}>
+          <TouchableOpacity style={styles.backBtn} onPress={this.goBack}>
             <Text style={styles.buttonText}>Back</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button} onPress={this.toggleEdit}>
-            <Text style={styles.buttonText}>
-              {isEditing ? 'Save' : 'Edit'}
-            </Text>
+          <TouchableOpacity style={styles.editBtn} onPress={this.goToEditScreen}>
+            <Text style={styles.buttonText}>Edit</Text>
           </TouchableOpacity>
         </View>
-      </View>
+
+      </SafeAreaView>
     );
   }
 }
 
-// ✅ Styles in same file
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#eee',
-    alignItems: 'center',
-    paddingTop: 40,
-  },
+  container: { flex: 1, backgroundColor: '#eee', paddingHorizontal: 15 },
 
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    alignItems: 'center'
+  },
+
+  title: { fontSize: 22, fontWeight: 'bold', color: color.Secondry },
+
+  imageContainer: { alignItems: 'center', marginVertical: 15 },
+
+  profileCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    justifyContent: 'center',
     alignItems: 'center',
-    width: '90%',
-    marginBottom: 10,
+    backgroundColor: color.Secondry
   },
 
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    marginLeft: 10,
-  },
-
-  avatar: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    marginVertical: 15,
-  },
+  profileImage: { width: '100%', height: '100%', borderRadius: 55 },
 
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#4CAF50',
-    borderRadius: 12,
-    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderColor: color.Secondry,
+    borderRadius: 10,
+    paddingHorizontal: 15,
     marginVertical: 8,
-    width: '85%',
+    height: 45,
     backgroundColor: '#fff',
   },
 
-  input: {
-    flex: 1,
-    height: 45,
-    color: '#000',
-  },
+  input: { flex: 1, color: '#000' },
 
   buttonContainer: {
     flexDirection: 'row',
-    marginTop: 20,
-    width: '85%',
     justifyContent: 'space-between',
+    marginTop: 30,
   },
 
-  button: {
-    backgroundColor: '#66BB6A',
-    paddingVertical: 12,
-    paddingHorizontal: 35,
-    borderRadius: 12,
+  backBtn: {
+    backgroundColor: color.Secondry,
+    padding: 12,
+    borderRadius: 10,
+    width: '45%',
+    alignItems: 'center'
   },
 
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  editBtn: {
+    backgroundColor: color.Secondry,
+    padding: 12,
+    borderRadius: 10,
+    width: '45%',
+    alignItems: 'center'
   },
+
+  buttonText: { color: '#fff', fontWeight: 'bold' },
 });

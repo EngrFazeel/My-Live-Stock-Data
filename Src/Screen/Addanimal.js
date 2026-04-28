@@ -13,6 +13,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Dropdown } from 'react-native-element-dropdown';
 import DatePicker from 'react-native-date-picker';
+import Home from './Home';
 
 export default class Addanimal extends Component {
     constructor(props) {
