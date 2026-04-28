@@ -76,8 +76,8 @@ function Main () {
     tabBarActiveTintColor: "#fff", }}>
         <Tab.Screen name="Home"  component={Home}
        options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="home" size={size} color={color} />)}}/>
-        <Tab.Screen name="Settings" component={Settings}
-        options={{ tabBarIcon:({ color, size })=>(<Ionicons name="settings" size={size} color={color}/>)}}/>
+        <Tab.Screen name="Sale" component={Sale}
+        options={{ tabBarIcon:({ color, size })=>( <MaterialIcons name="sell" size={size} color={color}/> )}}/>
         <Tab.Screen name="Scan" component={Scan}
         options={{ tabBarIcon:({ color, size })=>(<MaterialCommunityIcons name="line-scan" size={size} color={color}/>)}}/>
           <Tab.Screen name="Profile" component={Profile}
