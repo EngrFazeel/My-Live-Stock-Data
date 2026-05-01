@@ -1,13 +1,5 @@
 import React, { Component } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  TouchableOpacity
-} from 'react-native';
+import {View,Text, StyleSheet, ScrollView, SafeAreaView, StatusBar, TouchableOpacity} from 'react-native';
 import { color } from '../../Color';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
