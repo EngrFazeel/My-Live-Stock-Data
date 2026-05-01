@@ -5,62 +5,30 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  StatusBar,
-  Alert
+  StatusBar
 } from 'react-native';
-
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { color } from '../../Color';
 
 export default class EditUserDetail extends Component {
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      name: '',
-      phone: '',
-      cnic: '',
-      address: '',
-    };
-  }
-
-  // 🔙 Back
-  goBack = () => {
-    this.props.navigation.goBack();
-  };
-
-  // 💾 Save
-  handleSave = () => {
-    Alert.alert("Success", "Data Saved Successfully", [
-      {
-        text: "OK",
-        onPress: () => this.props.navigation.navigate('Home')
-      }
-    ]);
-  };
-
-  // ❌ Discard
-  handleDiscard = () => {
-    this.setState({
-      name: '',
-      phone: '',
-      cnic: '',
-      address: '',
-    });
+  state = {
+    name: '',
+    phone: '',
+    cnic: '',
+    address: '',
   };
 
   render() {
     return (
       <View style={styles.container}>
 
-        <StatusBar backgroundColor={color.Secondry} barStyle="light-content" />
+        <StatusBar backgroundColor="#4CAF50" barStyle="light-content" />
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={this.goBack}>
+          <TouchableOpacity>
             <Icon name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
-
           <Text style={styles.headerTitle}>Edit User Detail</Text>
         </View>
 
@@ -68,7 +36,6 @@ export default class EditUserDetail extends Component {
         <View style={styles.imageContainer}>
           <View style={styles.imageCircle}>
             <Icon name="person" size={60} color="#fff" />
-
             <View style={styles.cameraIcon}>
               <Icon name="camera-alt" size={18} color="#fff" />
             </View>
@@ -86,7 +53,7 @@ export default class EditUserDetail extends Component {
               value={this.state.name}
               onChangeText={(text) => this.setState({ name: text })}
             />
-            <Icon name="person" size={22} color={color.Secondry} />
+            <Icon name="person" size={22} color="#4CAF50" />
           </View>
 
           {/* Phone */}
@@ -98,7 +65,7 @@ export default class EditUserDetail extends Component {
               value={this.state.phone}
               onChangeText={(text) => this.setState({ phone: text })}
             />
-            <Icon name="phone" size={22} color={color.Secondry} />
+            <Icon name="phone" size={22} color="#4CAF50" />
           </View>
 
           {/* CNIC */}
@@ -109,7 +76,7 @@ export default class EditUserDetail extends Component {
               value={this.state.cnic}
               onChangeText={(text) => this.setState({ cnic: text })}
             />
-            <Icon name="credit-card" size={22} color={color.Secondry} />
+            <Icon name="credit-card" size={22} color="#4CAF50" />
           </View>
 
           {/* Address */}
@@ -120,7 +87,7 @@ export default class EditUserDetail extends Component {
               value={this.state.address}
               onChangeText={(text) => this.setState({ address: text })}
             />
-            <Icon name="location-on" size={22} color={color.Secondry} />
+            <Icon name="location-on" size={22} color="#4CAF50" />
           </View>
 
         </View>
@@ -128,11 +95,11 @@ export default class EditUserDetail extends Component {
         {/* Buttons */}
         <View style={styles.buttonContainer}>
 
-          <TouchableOpacity style={styles.discardBtn} onPress={this.handleDiscard}>
+          <TouchableOpacity style={styles.discardBtn}>
             <Text style={styles.btnText}>Discard</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.saveBtn} onPress={this.handleSave}>
+          <TouchableOpacity style={styles.saveBtn}>
             <Text style={styles.btnText}>Save</Text>
           </TouchableOpacity>
 
@@ -146,13 +113,13 @@ export default class EditUserDetail extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: color.primary,
+    backgroundColor: '#EAEAEA',
   },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: color.Secondry,
+    backgroundColor: '#4CAF50',
     padding: 15,
   },
 
@@ -160,7 +127,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 22,
     fontWeight: 'bold',
-    marginLeft: 80,
+    marginLeft: 15,
   },
 
   imageContainer: {
@@ -172,7 +139,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: color.Secondry,
+    backgroundColor: '#66BB6A',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -181,7 +148,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 5,
     right: 5,
-    backgroundColor: color.Secondry,
+    backgroundColor: '#4CAF50',
     borderRadius: 15,
     padding: 5,
   },
@@ -194,7 +161,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: color.Secondry,
+    borderColor: '#4CAF50',
     borderRadius: 10,
     paddingHorizontal: 10,
     marginBottom: 15,
@@ -204,7 +171,6 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     padding: 10,
-    color: '#000'
   },
 
   buttonContainer: {
@@ -221,7 +187,7 @@ const styles = StyleSheet.create({
   },
 
   saveBtn: {
-    backgroundColor: color.Secondry,
+    backgroundColor: '#4CAF50',
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 10,

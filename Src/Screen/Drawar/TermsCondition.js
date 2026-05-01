@@ -3,8 +3,17 @@ import {View,Text, StyleSheet, ScrollView, SafeAreaView, StatusBar, TouchableOpa
 import { color } from '../../Color';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-export default class TermsConditions extends Component {
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  SafeAreaView,
+  StatusBar,
+  TouchableOpacity
+} from 'react-native';
 
+export default class TermsConditions extends Component {
   renderSection(title, content) {
     return (
       <View style={styles.section}>
@@ -25,16 +34,10 @@ export default class TermsConditions extends Component {
 
         {/* Header */}
         <View style={styles.header}>
-
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => this.props.navigation.goBack()}
-          >
-            <Icon name="arrow-back" size={26} color="#fff" />
+          <TouchableOpacity>
+            <Text style={styles.backArrow}>←</Text>
           </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>Terms & Conditions</Text>
-
+          <Text style={styles.headerTitle}>Term & Conditions</Text>
         </View>
 
         {/* Content */}
@@ -94,63 +97,49 @@ export default class TermsConditions extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor:color.primary
+    backgroundColor: '#fff'
   },
-
   header: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor:color.Secondry ,
-    padding: 15,
-    elevation: 4,
+    backgroundColor: '#6BBF59',
+    padding: 15
   },
-
-  backButton: {
-    position: 'absolute',
-    left: 15,
-  },
-
-  headerTitle: {
+  backArrow: {
     color: '#fff',
     fontSize: 20,
+    marginRight: 10
+  },
+  headerTitle: {
+    color: '#fff',
+    fontSize: 18,
     fontWeight: 'bold'
   },
-
   content: {
     padding: 15
   },
-
   title: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#000'
+    marginBottom: 10
   },
-
   description: {
     fontSize: 14,
     marginBottom: 15,
-    color: '#444',
-    lineHeight: 20
+    color: '#444'
   },
-
   section: {
     marginBottom: 15
   },
-
   sectionTitle: {
     fontWeight: 'bold',
-    fontSize: 15,
-    marginBottom: 5,
-    color: '#000'
+    fontSize: 14,
+    marginBottom: 5
   },
-
   bullet: {
     fontSize: 13,
     color: '#555',
     marginLeft: 5,
-    marginBottom: 4,
-    lineHeight: 20
+    marginBottom: 3
   }
 });
