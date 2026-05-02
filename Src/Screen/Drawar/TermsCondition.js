@@ -3,16 +3,6 @@ import {View,Text, StyleSheet, ScrollView, SafeAreaView, StatusBar, TouchableOpa
 import { color } from '../../Color';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  StatusBar,
-  TouchableOpacity
-} from 'react-native';
-
 export default class TermsConditions extends Component {
   renderSection(title, content) {
     return (
