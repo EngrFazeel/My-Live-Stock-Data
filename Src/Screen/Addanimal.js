@@ -65,17 +65,17 @@ export default class Addanimal extends Component {
                 <ScrollView>
 
                     {/* HEADER */}
-                    <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                    <View style={{ height: 220, justifyContent: 'center', alignItems: 'center',}}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, backgroundColor:color.Secondry , height:50, width:'100%', marginTop: -45, }}>
                             <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
-                                <Ionicons name="arrow-back" size={30} color={color.Secondry} />
+                                <Ionicons name="arrow-back" size={30} marginLeft= {20} color={color.primary} />
                             </TouchableOpacity>
 
                             <Text style={{
                                 fontSize: 24,
                                 fontWeight: 'bold',
-                                marginLeft: 20,
-                                color: color.Secondry
+                                marginLeft: 40,
+                                color: color.primary
                             }}>
                                 Add Animal Details
                             </Text>
@@ -83,7 +83,7 @@ export default class Addanimal extends Component {
 
                         {/* PROFILE IMAGE */}
                         <Image
-                            style={{ height: 80, width: 80, borderRadius: 50 }}
+                            style={{ height: 100, width: 100, borderRadius: 50 }}
                             source={
                                 this.state.photo
                                     ? { uri: this.state.photo }

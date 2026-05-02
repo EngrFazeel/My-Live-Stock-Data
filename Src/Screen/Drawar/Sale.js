@@ -58,7 +58,7 @@ export default class SaleAnimal extends Component {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
-            <Icon name="arrow-back" size={25} color="green" />
+            <Icon name="arrow-back" size={25} color={color.primary} marginLeft={15}/>
           </TouchableOpacity>
 
           <Text style={styles.headerText}>Sale Animal</Text>
@@ -169,7 +169,10 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 10
+    backgroundColor:color.Secondry,
+    height:50,
+    marginLeft: -15,
+    marginRight: -15,
   },
 
   headerText: {
@@ -177,8 +180,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 20,
     fontWeight: "bold",
-    color: "green",
-    marginRight: 25
+    color: color.primary,
+    marginRight: 35
   },
 
   imageContainer: {
@@ -220,7 +223,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "green",
+    borderColor: color.Secondry,
     borderRadius: 10,
     paddingHorizontal: 15,
     marginVertical: 8,

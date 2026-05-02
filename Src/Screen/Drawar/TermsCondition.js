@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {View,Text, StyleSheet, ScrollView, SafeAreaView, StatusBar, TouchableOpacity} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, StatusBar, TouchableOpacity } from 'react-native';
 import { color } from '../../Color';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
@@ -20,12 +20,15 @@ export default class TermsConditions extends Component {
   render() {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor="#6BBF59" barStyle="light-content" />
+        <StatusBar backgroundColor={color.Secondry} barStyle="light-content" />
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity>
-            <Text style={styles.backArrow}>←</Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => this.props.navigation.goBack()}
+          >
+            <Icon name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Term & Conditions</Text>
         </View>
@@ -87,12 +90,12 @@ export default class TermsConditions extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff'
+    backgroundColor:color.primary
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#6BBF59',
+    backgroundColor: color.Secondry,
     padding: 15
   },
   backArrow: {
@@ -103,7 +106,8 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: '#fff',
     fontSize: 18,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    marginLeft: 60,
   },
   content: {
     padding: 15

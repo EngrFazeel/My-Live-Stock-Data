@@ -5,9 +5,11 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { color } from '../../Color';
 
 export default class EditUserDetail extends Component {
 
@@ -18,6 +20,36 @@ export default class EditUserDetail extends Component {
     address: '',
   };
 
+  // 🔴 Discard
+  handleDiscard = () => {
+    Alert.alert(
+      "Discard Changes",
+      "Are you sure you want to discard?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Yes",
+          onPress: () => {
+            this.setState({
+              name: '',
+              phone: '',
+              cnic: '',
+              address: '',
+            });
+            this.props.navigation.goBack();
+          }
+        }
+      ]
+    );
+  };
+
+  // 🟢 Save
+  handleSave = () => {
+    // You can add validation here
+
+    this.props.navigation.navigate('Home');
+  };
+
   render() {
     return (
       <View style={styles.container}>
@@ -26,7 +58,7 @@ export default class EditUserDetail extends Component {
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
             <Icon name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit User Detail</Text>
@@ -95,11 +127,17 @@ export default class EditUserDetail extends Component {
         {/* Buttons */}
         <View style={styles.buttonContainer}>
 
-          <TouchableOpacity style={styles.discardBtn}>
+          <TouchableOpacity 
+            style={styles.discardBtn}
+            onPress={this.handleDiscard}
+          >
             <Text style={styles.btnText}>Discard</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.saveBtn}>
+          <TouchableOpacity  
+            style={styles.saveBtn}
+            onPress={this.handleSave}
+          >
             <Text style={styles.btnText}>Save</Text>
           </TouchableOpacity>
 
@@ -113,13 +151,13 @@ export default class EditUserDetail extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EAEAEA',
+    backgroundColor: color.primary,
   },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#4CAF50',
+    backgroundColor: color.Secondry,
     padding: 15,
   },
 
@@ -127,7 +165,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 22,
     fontWeight: 'bold',
-    marginLeft: 15,
+    marginLeft: 75,
   },
 
   imageContainer: {
@@ -139,7 +177,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#66BB6A',
+    backgroundColor: color.Secondry,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -148,7 +186,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 5,
     right: 5,
-    backgroundColor: '#4CAF50',
+    backgroundColor: color.Secondry,
     borderRadius: 15,
     padding: 5,
   },
@@ -161,7 +199,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderColor:color.Secondry,
     borderRadius: 10,
     paddingHorizontal: 10,
     marginBottom: 15,
@@ -182,19 +220,20 @@ const styles = StyleSheet.create({
   discardBtn: {
     backgroundColor: 'red',
     paddingVertical: 12,
-    paddingHorizontal: 30,
+    width:'40%',
     borderRadius: 10,
   },
 
   saveBtn: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: color.Secondry,
     paddingVertical: 12,
-    paddingHorizontal: 30,
+    width:'40%',
     borderRadius: 10,
   },
 
   btnText: {
     color: '#fff',
     fontWeight: 'bold',
+    textAlign:'center'
   },
 });

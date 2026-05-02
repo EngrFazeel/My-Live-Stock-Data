@@ -1,5 +1,17 @@
 import React, { Component } from "react";
-import {View,Text,StyleSheet,TouchableOpacity,SafeAreaView,Animated,Dimensions,TouchableWithoutFeedback, StatusBar} from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  Animated,
+  Dimensions,
+  TouchableWithoutFeedback,
+  StatusBar,
+  Alert
+} from "react-native";
+
 import Icon from "react-native-vector-icons/MaterialIcons";
 import FontAwesome6 from "react-native-vector-icons/FontAwesome6";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
@@ -9,9 +21,6 @@ import { color } from "../Color";
 
 const { width } = Dimensions.get("window");
 
-// Dummy colors (replace with your Color.js if needed)
-
-
 export default class Home extends Component {
 
   state = {
@@ -19,6 +28,7 @@ export default class Home extends Component {
     animation: new Animated.Value(-width * 0.6),
   };
 
+  // 🔥 Drawer Toggle
   toggleDrawer = () => {
     const { drawerOpen, animation } = this.state;
 
@@ -36,22 +46,56 @@ export default class Home extends Component {
     this.props.navigation?.navigate(screen);
   };
 
+  // 🔴 Delete
+  handleDelete = () => {
+    Alert.alert(
+      "Delete",
+      "Are you sure you want to delete this record?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Yes",
+          onPress: () => {
+            console.log("Deleted");
+          }
+        }
+      ]
+    );
+  };
+
+  // 🟢 Edit
+  handleEdit = () => {
+    this.props.navigation.navigate("EditUserDetail");
+  };
+
   render() {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar backgroundColor={color.Secondry}></StatusBar>
+
+        <StatusBar backgroundColor={color.Secondry} />
+
         {/* HEADER */}
         <View style={styles.header}>
+
           <TouchableOpacity onPress={this.toggleDrawer}>
             <Icon name="menu" size={30} color="#fff" />
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>Home</Text>
 
+          {/* 🔥 Updated Icons */}
           <View style={styles.headerIcons}>
-            <Icon name="delete" size={25} color="#fff" style={{ marginRight: 15 }} />
-            <Icon name="edit" size={25} color="#fff" />
+
+            <TouchableOpacity onPress={this.handleDelete}>
+              <Icon name="delete" size={25} color="#fff" style={{ marginRight: 15 }} />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={this.handleEdit}>
+              <Icon name="edit" size={25} color="#fff" />
+            </TouchableOpacity>
+
           </View>
+
         </View>
 
         {/* DIVIDER */}
@@ -91,7 +135,7 @@ export default class Home extends Component {
           </View>
         </View>
 
-        {/* FLOATING BUTTON */}
+        {/* FLOAT BUTTON */}
         <TouchableOpacity
           style={styles.floatingBtn}
           onPress={() => this.props.navigation?.navigate("Addanimal")}
@@ -111,55 +155,46 @@ export default class Home extends Component {
 
           <Text style={styles.drawerTitle}>Menu</Text>
 
-          {/* Home */}
           <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.navigateTo("Home")}>
-            <Entypo name="home" size={22} color= {color.Secondry} />
+            <Entypo name="home" size={22} color={color.Secondry} />
             <Text style={styles.drawerText}>Home</Text>
           </TouchableOpacity>
 
-          {/* Profile */}
           <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.navigateTo("Profile")}>
-            <MaterialIcons name="person" size={22} color= {color.Secondry} />
+            <MaterialIcons name="person" size={22} color={color.Secondry} />
             <Text style={styles.drawerText}>Profile</Text>
           </TouchableOpacity>
 
-          {/* Edit Profile */}
           <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.navigateTo("Editprofile")}>
-            <MaterialIcons name="edit" size={22} color= {color.Secondry}  />
+            <MaterialIcons name="edit" size={22} color={color.Secondry} />
             <Text style={styles.drawerText}>Edit Profile</Text>
           </TouchableOpacity>
 
-          {/* Sale */}
           <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.navigateTo("Sale")}>
-            <MaterialIcons name="sell" size={22} color= {color.Secondry} />
+            <MaterialIcons name="sell" size={22} color={color.Secondry} />
             <Text style={styles.drawerText}>Sale Animal</Text>
           </TouchableOpacity>
 
-          {/* App Info */}
           <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.navigateTo("AppInfo")}>
-            <MaterialIcons name="info" size={22} color= {color.Secondry}  />
+            <MaterialIcons name="info" size={22} color={color.Secondry} />
             <Text style={styles.drawerText}>App Info</Text>
           </TouchableOpacity>
 
-          {/* Contact */}
           <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.navigateTo("Contactus")}>
-            <MaterialIcons name="contact-phone" size={22} color= {color.Secondry} />
+            <MaterialIcons name="contact-phone" size={22} color={color.Secondry} />
             <Text style={styles.drawerText}>Contact Us</Text>
           </TouchableOpacity>
 
-          {/* Privacy */}
           <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.navigateTo("PrivacyPolicy")}>
-            <MaterialIcons name="privacy-tip" size={22} color= {color.Secondry}  />
+            <MaterialIcons name="privacy-tip" size={22} color={color.Secondry} />
             <Text style={styles.drawerText}>Privacy Policy</Text>
           </TouchableOpacity>
 
-          {/* Terms */}
           <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.navigateTo("TermsCondition")}>
-            <MaterialIcons name="description" size={22} color= {color.Secondry}  />
+            <MaterialIcons name="description" size={22} color={color.Secondry} />
             <Text style={styles.drawerText}>Terms & Conditions</Text>
           </TouchableOpacity>
 
-          {/* Logout */}
           <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.navigateTo("Login")}>
             <AntDesign name="logout" size={22} color="red" />
             <Text style={[styles.drawerText, { color: "red" }]}>Logout</Text>
@@ -173,11 +208,7 @@ export default class Home extends Component {
 }
 
 const styles = StyleSheet.create({
-
-  container: {
-    flex: 1,
-    backgroundColor: "#f3f3f3",
-  },
+  container: { flex: 1, backgroundColor: color.primary },
 
   header: {
     height: 60,
@@ -188,20 +219,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
 
-  headerTitle: {
-    fontSize: 22,
-    color: "#fff",
-    fontWeight: "bold",
-  },
+  headerTitle: { fontSize: 22, color: "#fff", fontWeight: "bold" },
 
-  headerIcons: {
-    flexDirection: "row",
-  },
+  headerIcons: { flexDirection: "row" },
 
-  divider: {
-    height: 6,
-    backgroundColor: "#e0e0e0",
-  },
+  divider: { height: 6, backgroundColor: "#e0e0e0" },
 
   cardContainer: {
     flexDirection: "row",
@@ -215,11 +237,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
 
-  image: {
-    width: "20%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  image: { width: "20%", justifyContent: "center", alignItems: "center" },
 
   iconCircle: {
     width: 60,
@@ -231,14 +249,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  infoBox: {
-    width: "80%",
-  },
+  infoBox: { width: "80%" },
 
-  row: {
-    flexDirection: "row",
-    marginVertical: 3,
-  },
+  row: { flexDirection: "row", marginVertical: 3 },
 
   boxLarge: {
     borderWidth: 2,
@@ -301,10 +314,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  drawerItem: {
-    fontSize: 16,
-    paddingVertical: 15,
-  },
   drawerItemRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -316,5 +325,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
-
 });

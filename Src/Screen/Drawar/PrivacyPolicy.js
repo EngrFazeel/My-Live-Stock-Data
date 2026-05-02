@@ -8,13 +8,14 @@ import {
   TouchableOpacity
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { color } from '../../Color';
 
 export default class PrivacyPolicyScreen extends Component {
   render() {
     return (
       <View style={styles.container}>
 
-        <StatusBar backgroundColor="#4CAF50" barStyle="light-content" />
+        <StatusBar backgroundColor={color.Secondry} barStyle="light-content" />
 
         {/* Header */}
         <View style={styles.header}>
@@ -96,14 +97,14 @@ export default class PrivacyPolicyScreen extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EAEAEA',
+    backgroundColor: color.primary,
   },
 
   header: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#4CAF50',
+    backgroundColor: color.Secondry,
     padding: 15,
     elevation: 4,
   },

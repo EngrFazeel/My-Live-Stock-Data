@@ -4,187 +4,174 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  Image,
   TouchableOpacity,
-  Alert,
+  Image,
+  StatusBar
 } from 'react-native';
+
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { launchImageLibrary } from 'react-native-image-picker';
+import { color } from '../Color';
 
 export default class UserDetails extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      isEditing: false,
-      image: null,
-      user: {
-        email: '',
-        name: '',
-        phone: '',
-        cnic: '',
-        address: '',
-      },
-    };
-  }
 
-  handleChange = (key, value) => {
-    this.setState({
-      user: { ...this.state.user, [key]: value },
-    });
-  };
-
-  pickImage = () => {
-    launchImageLibrary({ mediaType: 'photo' }, (response) => {
-      if (response.assets) {
-        this.setState({ image: response.assets[0].uri });
-      }
-    });
-  };
-
-  toggleEdit = () => {
-    if (this.state.isEditing) {
-      Alert.alert('Saved Successfully');
+  state = {
+    user: {
+      email: 'engineerqazifazeel@gmail.com',
+      name: 'Qazi Fazeel',
+      phone: '03315684305',
+      cnic: '32403-8618115-5',
+      address: 'Rahim Yar Khan',
     }
-    this.setState({ isEditing: !this.state.isEditing });
   };
 
   goBack = () => {
-    Alert.alert('Back Pressed');
-    // this.props.navigation.goBack();
+    this.props.navigation.goBack();
   };
 
-  renderInput(label, key, icon) {
-    const { user, isEditing } = this.state;
+  goToEdit = () => {
+    this.props.navigation.navigate('Editprofile', {
+      userData: this.state.user
+    });
+  };
 
+  renderInput = (placeholder, value, icon) => {
     return (
-      <View style={styles.inputContainer}>
+      <View style={styles.inputBox}>
         <TextInput
-          value={user[key]}
-          onChangeText={(text) => this.handleChange(key, text)}
-          placeholder={label}
-          editable={isEditing}
+          value={value}
+          editable={false}
+          placeholder={placeholder}
           style={styles.input}
-          placeholderTextColor="#333"
+          placeholderTextColor="#000"
         />
         <Icon name={icon} size={22} color="#4CAF50" />
       </View>
     );
-  }
+  };
 
   render() {
-    const { image, isEditing } = this.state;
+    const { user } = this.state;
 
     return (
       <View style={styles.container}>
-        
+
+        <StatusBar backgroundColor= {color.Secondry} barStyle="light-content" />
+
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={this.goBack}>
-            <Icon name="arrow-back" size={28} color="#4CAF50" />
+            <Icon name="arrow-back" size={26} color={color.primary} />
           </TouchableOpacity>
+
           <Text style={styles.title}>User Details</Text>
         </View>
 
-        {/* Avatar */}
-        <TouchableOpacity onPress={this.pickImage}>
+        {/* Profile Image */}
+        <View style={styles.imageContainer}>
           <Image
-            source={
-              image
-                ? { uri: image }
-                : { uri: 'https://via.placeholder.com/150' }
-            }
-            style={styles.avatar}
+            source={(require('../Assets/my.jpg'))}
+            style={styles.image}
           />
-        </TouchableOpacity>
+        </View>
 
         {/* Inputs */}
-        {this.renderInput('Email', 'email', 'email')}
-        {this.renderInput('Name', 'name', 'person')}
-        {this.renderInput('Phone Number', 'phone', 'phone')}
-        {this.renderInput('CNIC NO', 'cnic', 'credit-card')}
-        {this.renderInput('Address', 'address', 'location-on')}
+        {this.renderInput('Email', user.email, 'check')}
+        {this.renderInput('Name', user.name, 'person')}
+        {this.renderInput('Phone Number', user.phone, 'call')}
+        {this.renderInput('CNIC NO', user.cnic, 'credit-card')}
+        {this.renderInput('Address', user.address, 'location-on')}
 
         {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={this.goBack}>
-            <Text style={styles.buttonText}>Back</Text>
+        <View style={styles.buttonRow}>
+
+          <TouchableOpacity style={styles.backBtn} onPress={this.goBack}>
+            <Text style={styles.btnText}>Back</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button} onPress={this.toggleEdit}>
-            <Text style={styles.buttonText}>
-              {isEditing ? 'Save' : 'Edit'}
-            </Text>
+          <TouchableOpacity style={styles.editBtn} onPress={this.goToEdit}>
+            <Text style={styles.btnText}>Edit</Text>
           </TouchableOpacity>
+
         </View>
+
       </View>
     );
   }
 }
 
-// ✅ Styles in same file
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#eee',
-    alignItems: 'center',
-    paddingTop: 40,
+    backgroundColor: color.primary,
+    // paddingTop: 10
   },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '90%',
-    marginBottom: 10,
+    padding: 15,
+    backgroundColor:color.Secondry
   },
 
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#4CAF50',
-    marginLeft: 10,
+    color: color.primary,
+    marginLeft: 80
   },
 
-  avatar: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    marginVertical: 15,
+  imageContainer: {
+    alignItems: 'center',
+    marginVertical: 15
   },
 
-  inputContainer: {
+  image: {
+    width: 120,
+    height: 120,
+    borderRadius: 60
+  },
+
+  inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderColor: color.Secondry,
     borderRadius: 12,
+    marginHorizontal: 20,
+    marginBottom: 12,
     paddingHorizontal: 10,
-    marginVertical: 8,
-    width: '85%',
     backgroundColor: '#fff',
+    height: 50
   },
 
   input: {
     flex: 1,
-    height: 45,
-    color: '#000',
+    color: '#000'
   },
 
-  buttonContainer: {
+  buttonRow: {
     flexDirection: 'row',
-    marginTop: 20,
-    width: '85%',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    marginTop: 20
   },
 
-  button: {
-    backgroundColor: '#66BB6A',
+  backBtn: {
+    backgroundColor: color.Secondry,
     paddingVertical: 12,
-    paddingHorizontal: 35,
-    borderRadius: 12,
+    width: '40%',
+    borderRadius: 10
   },
 
-  buttonText: {
+  editBtn: {
+    backgroundColor: color.Secondry,
+    paddingVertical: 12,
+    width: '40%',
+    borderRadius: 10
+  },
+
+  btnText: {
     color: '#fff',
     fontWeight: 'bold',
-  },
+    textAlign:'center'
+  }
 });

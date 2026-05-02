@@ -18,6 +18,7 @@
     "@react-navigation/stack": "^6.3.16",
     "@react.native.web/webview": "^1.0.3",
     "@webviewjs/webview": "^0.1.4",
+    "dotenv": "^17.4.2",
     "react": "18.2.0",
     "react-native": "0.71.8",
     "react-native-date-picker": "^5.0.13",

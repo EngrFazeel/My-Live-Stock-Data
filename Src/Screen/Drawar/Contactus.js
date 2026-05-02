@@ -33,7 +33,7 @@ export default class ContactUsScreen extends Component {
     return (
       <View style={styles.container}>
 
-        <StatusBar backgroundColor="#4CAF50" barStyle="light-content" />
+        <StatusBar backgroundColor={color.Secondry} barStyle="light-content" />
 
         {/* Header */}
         <View style={styles.header}>
@@ -60,7 +60,7 @@ export default class ContactUsScreen extends Component {
 
           {/* Email */}
           <TouchableOpacity style={styles.card} onPress={this.openEmail}>
-            <Icon name="email" size={22} color="#4CAF50" />
+            <Icon name="email" size={22} color={color.Secondry} />
             <Text style={styles.cardText}>
               <Text style={styles.bold}>Email{"\n"}</Text>
               qazifazeel95@gmail.com
@@ -69,7 +69,7 @@ export default class ContactUsScreen extends Component {
 
           {/* Phone */}
           <TouchableOpacity style={styles.card} onPress={this.openPhone}>
-            <Icon name="phone" size={22} color="#4CAF50" />
+            <Icon name="phone" size={22} color={color.Secondry} />
             <Text style={styles.cardText}>
               <Text style={styles.bold}>Phone{"\n"}</Text>
               +92 331 5684305
@@ -78,7 +78,7 @@ export default class ContactUsScreen extends Component {
 
           {/* WhatsApp */}
           <TouchableOpacity style={styles.card} onPress={this.openWhatsApp}>
-            <Icon name="chat" size={22} color="#4CAF50" />
+            <Icon name="chat" size={22} color={color.Secondry} />
             <Text style={styles.cardText}>
               <Text style={styles.bold}>WhatsApp{"\n"}</Text>
               Chat directly on WhatsApp
@@ -87,7 +87,7 @@ export default class ContactUsScreen extends Component {
 
           {/* Facebook */}
           <TouchableOpacity style={styles.card} onPress={this.openFacebook}>
-            <Icon name="public" size={22} color="#4CAF50" />
+            <Icon name="public" size={22} color={color.Secondry} />
             <Text style={styles.cardText}>
               <Text style={styles.bold}>Facebook{"\n"}</Text>
               Engr Qazi Fazeel Official
@@ -108,7 +108,7 @@ export default class ContactUsScreen extends Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#EAEAEA',
+    backgroundColor:color.primary,
   },
 
   header: {
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: color.Secondry,
     padding: 15,
-    elevation: 4,
+    elevation: 10,
   },
 
   backButton: {
@@ -139,13 +139,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    color:'black'
   },
 
   text: {
     fontSize: 15,
     marginBottom: 15,
     lineHeight: 22,
-    color: '#333',
+    color: 'black',
   },
 
   card: {
