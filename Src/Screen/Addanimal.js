@@ -3,330 +3,253 @@ import {
     View,
     Text,
     TextInput,
-    TouchableOpacity,
     Image,
+    TouchableOpacity,
     StatusBar,
-    StyleSheet,
-    ScrollView
+    ScrollView,
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { color } from '../Color';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { launchCamera } from 'react-native-image-picker';
-import DateTimePickerModal from "react-native-modal-datetime-picker";
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Dropdown } from 'react-native-element-dropdown';
+import DatePicker from 'react-native-date-picker';
 
-// Colors
-const color = {
-    Secondry: "#4CAF50",
-};
-
-export default class AddAnimal extends Component {
-
+export default class Addanimal extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            name: '',
-            owner: '',
-            phone: '',
-            date: new Date(),
-            isDatePickerVisible: false,
-            age: '',
-            gender: '',
-            image: null,
+            age: null,
+            gender: null,
+            photo: null,
             scanImage: null,
+            date: new Date(),
+            show: false,
+            selectedDate: '',
         };
     }
 
-    // 📸 Profile Image
-    openCamera = () => {
-        launchCamera(
-            { mediaType: 'photo', cameraType: 'back' },
-            (response) => {
-                if (response.didCancel) return;
-                if (response.assets?.length > 0) {
-                    this.setState({ image: response.assets[0].uri });
-                }
-            }
-        );
-    };
+    ageData = [
+        { label: '1 Year', value: '1' },
+        { label: '2 Years', value: '2' },
+        { label: '3 Years', value: '3' },
+        { label: '4 Years', value: '4' },
+        { label: '5 Years', value: '5' },
+    ];
 
-    // 🐾 Scanner
-    openScanner = () => {
-        launchCamera(
-            { mediaType: 'photo', cameraType: 'back' },
-            (response) => {
-                if (response.didCancel) return;
-                if (response.assets?.length > 0) {
-                    this.setState({ scanImage: response.assets[0].uri });
-                }
-            }
-        );
-    };
+    genderData = [
+        { label: 'Cow', value: 'cow' },
+        { label: 'OX', value: 'ox' },
+        { label: 'Buffalo', value: 'buffalo' },
+        { label: 'Buffalo Female', value: 'buffalo_female' },
+    ];
 
-    // 📅 Date Confirm
-    handleConfirm = (date) => {
-        this.setState({
-            date,
-            isDatePickerVisible: false
+    componentDidMount() {
+        this.focusListener = this.props.navigation.addListener('focus', () => {
+            if (this.props.route?.params?.scanImage) {
+                this.setState({ scanImage: this.props.route.params.scanImage });
+                this.props.navigation.setParams({ scanImage: null });
+            }
         });
-    };
+    }
 
-    // 💾 Save
-    saveData = () => {
-        const formattedDate = this.formatDate(this.state.date);
-
-        const animal = {
-            ...this.state,
-            date: formattedDate,
-        };
-
-        this.props.navigation.navigate('Home', { animal });
-    };
-
-    formatDate = (date) => {
-        const d = new Date(date);
-        return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    showDatePicker = () => {
+        this.setState({ show: true });
     };
 
     render() {
-        const formattedDate = this.formatDate(this.state.date);
-
         return (
-            <View style={styles.container}>
-                <StatusBar backgroundColor={color.Secondry} barStyle="light-content" />
+            <View style={{ flex: 1, backgroundColor: color.textcolor2 }}>
+                <StatusBar backgroundColor={color.StatusBar} />
 
-                {/* Header */}
-                <View style={styles.header}>
-                    <Ionicons
-                        name="arrow-back"
-                        size={24}
-                        color="white"
-                        onPress={() => this.props.navigation.goBack()}
-                        style={styles.backIcon}
-                    />
-                    <Text style={styles.title}>Add Animal Details</Text>
-                </View>
+                <ScrollView>
 
-                <ScrollView contentContainerStyle={styles.scroll}>
+                    {/* HEADER */}
+                    <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20 }}>
+                            <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
+                                <Ionicons name="arrow-back" size={30} color={color.Secondry} />
+                            </TouchableOpacity>
 
-                    {/* Profile Image */}
-                    <TouchableOpacity style={styles.imageContainer} onPress={this.openCamera}>
-                        <View style={styles.imageCircle}>
-                            {this.state.image ? (
-                                <Image source={{ uri: this.state.image }} style={styles.imagePreview} />
-                            ) : (
-                                <Icon name="person" size={60} color="#fff" />
-                            )}
-                            <View style={styles.cameraIcon}>
-                                <Icon name="camera-alt" size={18} color="#fff" />
-                            </View>
-                        </View>
-                    </TouchableOpacity>
-
-                    {/* Name */}
-                    <View style={styles.inputRow}>
-                        <Icon name="pets" size={20} color={color.Secondry} />
-                        <TextInput
-                            placeholder="Name"
-                            placeholderTextColor="black"
-                            style={styles.inputText}
-                            value={this.state.name}
-                            onChangeText={(t) => this.setState({ name: t })}
-                        />
-                    </View>
-
-                    {/* Owner */}
-                    <View style={styles.inputRow}>
-                        <Icon name="person" size={20} color={color.Secondry} />
-                        <TextInput
-                            placeholder="Owner Name"
-                            placeholderTextColor="black"
-                            style={styles.inputText}
-                            value={this.state.owner}
-                            onChangeText={(t) => this.setState({ owner: t })}
-                        />
-                    </View>
-
-                    {/* Phone */}
-                    <View style={styles.inputRow}>
-                        <Icon name="phone" size={20} color={color.Secondry} />
-                        <TextInput
-                            placeholder="Phone Number"
-                            placeholderTextColor="black"
-                            keyboardType="phone-pad"
-                            style={styles.inputText}
-                            value={this.state.phone}
-                            onChangeText={(t) => this.setState({ phone: t })}
-                        />
-                    </View>
-
-                    {/* 📅 Date Picker */}
-                    <TouchableOpacity
-                        style={styles.inputRow}
-                        onPress={() => this.setState({ isDatePickerVisible: true })}
-                    >
-                        <Icon name="calendar-today" size={20} color={color.Secondry} />
-                        <Text style={styles.dateText}>
-                            {formattedDate}  Register date
-                        </Text>
-                    </TouchableOpacity>
-
-                    <DateTimePickerModal
-                        isVisible={this.state.isDatePickerVisible}
-                        mode="date"
-                        onConfirm={this.handleConfirm}
-                        onCancel={() => this.setState({ isDatePickerVisible: false })}
-                    />
-
-                    {/* Age & Gender */}
-                    <View style={styles.row}>
-                        <View style={styles.smallInputRow}>
-                            <TextInput
-                                placeholder="Age"
-                                placeholderTextColor="black"
-                                style={styles.inputText}
-                                value={this.state.age}
-                                onChangeText={(t) => this.setState({ age: t })}
-                            />
+                            <Text style={{
+                                fontSize: 24,
+                                fontWeight: 'bold',
+                                marginLeft: 20,
+                                color: color.Secondry
+                            }}>
+                                Add Animal Details
+                            </Text>
                         </View>
 
-                        <View style={styles.smallInputRow}>
-                            <TextInput
-                                placeholder="Gender"
-                                placeholderTextColor="black"
-                                style={styles.inputText}
-                                value={this.state.gender}
-                                onChangeText={(t) => this.setState({ gender: t })}
-                            />
-                        </View>
-                    </View>
+                        {/* PROFILE IMAGE */}
+                        <Image
+                            style={{ height: 80, width: 80, borderRadius: 50 }}
+                            source={
+                                this.state.photo
+                                    ? { uri: this.state.photo }
+                                    : require('../Assets/Profile.png')
+                            }
+                        />
 
-                    {/* Scanner */}
-                    <TouchableOpacity style={styles.scanBox} onPress={this.openScanner}>
-                        {this.state.scanImage ? (
+                        <TouchableOpacity>
                             <Image
-                                source={{ uri: this.state.scanImage }}
-                                style={{ width: '100%', height: '100%' }}
+                                style={{
+                                    height: 30,
+                                    width: 30,
+                                    marginTop: -25,
+                                    marginLeft: 50
+                                }}
+                                source={require('../Assets/Camera.png')}
                             />
-                        ) : (
-                            <>
-                                <Icon name="qr-code-scanner" size={40} color={color.Secondry} />
-                                <Text style={{ color: 'black', marginTop: 5 }}>
-                                    Tap to Scan
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* FORM */}
+                    <View style={{ width: '90%', alignSelf: 'center' }}>
+
+                        {/* NAME */}
+                        <View style={styles.inputBox}>
+                            <Image style={styles.iconImg} source={require('../Assets/Cow.png')} />
+                            <TextInput placeholder="Name" style={styles.input} placeholderTextColor="black" />
+                        </View>
+
+                        {/* OWNER */}
+                        <View style={styles.inputBox}>
+                            <MaterialCommunityIcons name="account" size={25} color={color.Secondry} />
+                            <TextInput placeholder="Owner Name" style={styles.input} placeholderTextColor="black" />
+                        </View>
+
+                        {/* PHONE */}
+                        <View style={styles.inputBox}>
+                            <Ionicons name="call" size={25} color={color.Secondry} />
+                            <TextInput placeholder="Phone Number" keyboardType="numeric" style={styles.input} placeholderTextColor="black" />
+                        </View>
+
+                        {/* DATE */}
+                        <View style={styles.inputBox}>
+                            <Ionicons name="calendar" size={25} color={color.Secondry} />
+                            <TouchableOpacity onPress={this.showDatePicker} style={{ flex: 1 }}>
+                                <Text style={{ marginLeft: 10, color: 'black' }}>
+                                    {this.state.selectedDate || 'Register Date'}
                                 </Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
+                            </TouchableOpacity>
+                        </View>
 
-                    {/* Buttons */}
-                    <View style={styles.btnRow}>
-                        <TouchableOpacity style={styles.discard}>
-                            <Text style={styles.btnText}>Discard</Text>
+                        {/* DROPDOWNS */}
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                            <Dropdown
+                                style={styles.dropdown}
+                                placeholder="Age"
+                                data={this.ageData}
+                                labelField="label"
+                                valueField="value"
+                                value={this.state.age}
+                                onChange={item => this.setState({ age: item.value })}
+                            />
+
+                            <Dropdown
+                                style={styles.dropdown}
+                                placeholder="Category"
+                                data={this.genderData}
+                                labelField="label"
+                                valueField="value"
+                                value={this.state.gender}
+                                onChange={item => this.setState({ gender: item.value })}
+                            />
+                        </View>
+
+                        {/* SCAN */}
+                        <TouchableOpacity
+                            style={styles.scanBox}
+                            onPress={() => this.props.navigation.navigate('Scansave')}
+                        >
+                            {
+                                this.state.scanImage
+                                    ? <Image source={{ uri: this.state.scanImage }} style={{ height: '100%', width: '100%' }} />
+                                    : <MaterialCommunityIcons name="line-scan" size={70} color={color.Secondry} />
+                            }
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={styles.save} onPress={this.saveData}>
-                            <Text style={styles.btnText}>Register</Text>
-                        </TouchableOpacity>
+                        {/* BUTTONS */}
+                        <View style={styles.btnRow}>
+                            <TouchableOpacity style={[styles.btn, { backgroundColor: 'red' }]}>
+                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Discard</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[styles.btn, { backgroundColor: color.Secondry }]}
+                                onPress={() => this.props.navigation.navigate('Home')}
+                            >
+                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                            </TouchableOpacity>
+                        </View>
+
                     </View>
 
                 </ScrollView>
+
+                {/* DATE PICKER */}
+                <DatePicker
+                    modal
+                    open={this.state.show}
+                    date={this.state.date}
+                    mode="date"
+                    onConfirm={(date) => {
+                        const formattedDate = `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
+                        this.setState({
+                            date,
+                            selectedDate: formattedDate,
+                            show: false
+                        });
+                    }}
+                    onCancel={() => this.setState({ show: false })}
+                />
+
             </View>
         );
     }
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#EAEAEA' },
-
-    header: {
-        height: 60,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: color.Secondry,
-    },
-
-    backIcon: {
-        position: 'absolute',
-        left: 15,
-    },
-
-    title: {
-        color: 'white',
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-
-    scroll: { padding: 20 },
-
-    imageContainer: { alignItems: 'center', marginVertical: 20 },
-
-    imageCircle: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: color.Secondry,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden'
-    },
-
-    imagePreview: { width: 120, height: 120, borderRadius: 60 },
-
-    cameraIcon: {
-        position: 'absolute',
-        bottom: 5,
-        right: 10,
-        backgroundColor: color.Secondry,
-        borderRadius: 15,
-        padding: 5,
-    },
-
-    inputRow: {
+const styles = {
+    inputBox: {
+        height: 50,
+        borderWidth: 2,
+        borderColor: color.borderColor,
+        borderRadius: 10,
         flexDirection: 'row',
         alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: color.Secondry,
-        borderRadius: 10,
         paddingHorizontal: 10,
-        marginBottom: 12,
-        height: 50,
+        marginBottom: 12
     },
 
-    inputText: {
-        marginLeft: 10,
+    input: {
         flex: 1,
+        marginLeft: 10,
         color: 'black'
     },
 
-    dateText: {
-        marginLeft: 10,
-        color: 'black',
+    iconImg: {
+        height: 25,
+        width: 25
     },
 
-    row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-
-    smallInputRow: {
-        width: '48%',
-        borderWidth: 1.5,
+    dropdown: {
+        height: 50,
+        width: '45%',
+        borderWidth: 2,
         borderColor: color.Secondry,
         borderRadius: 10,
-        paddingHorizontal: 10,
-        height: 50,
-        justifyContent: 'center'
+        paddingHorizontal: 10
     },
 
     scanBox: {
         height: 120,
-        borderWidth: 1.5,
-        borderColor: color.Secondry,
+        borderWidth: 2,
+        borderColor: color.borderColor,
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 15,
-        overflow: 'hidden'
+        marginTop: 15
     },
 
     btnRow: {
@@ -335,24 +258,11 @@ const styles = StyleSheet.create({
         marginTop: 20
     },
 
-    discard: {
-        backgroundColor: 'red',
-        padding: 12,
-        borderRadius: 10,
+    btn: {
+        height: 45,
         width: '45%',
-        alignItems: 'center'
-    },
-
-    save: {
-        backgroundColor: color.Secondry,
-        padding: 12,
-        borderRadius: 10,
-        width: '45%',
-        alignItems: 'center'
-    },
-
-    btnText: {
-        color: '#fff',
-        fontWeight: 'bold'
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 10
     }
-});
+};
