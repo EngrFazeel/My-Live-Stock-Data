@@ -9,6 +9,7 @@ import {
   Linking
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { color } from '../../Color';
 
 export default class ContactUsScreen extends Component {
 
@@ -20,8 +21,12 @@ export default class ContactUsScreen extends Component {
     Linking.openURL('tel:+923315684305');
   };
 
+  openWhatsApp = () => {
+    Linking.openURL('https://wa.me/923315684305');
+  };
+
   openFacebook = () => {
-    Linking.openURL('https://www.facebook.com/');
+    Linking.openURL('https://www.facebook.com/EngrQaziFazeelOfficial');
   };
 
   render() {
@@ -32,10 +37,16 @@ export default class ContactUsScreen extends Component {
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => this.props.navigation.goBack()}
+          >
             <Icon name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
+
           <Text style={styles.headerTitle}>Contact Us</Text>
+
         </View>
 
         {/* Content */}
@@ -45,37 +56,43 @@ export default class ContactUsScreen extends Component {
 
           <Text style={styles.text}>
             Have questions, feedback, or need support? We're here to help!
-            Feel free to reach out to us through any of the following channels:
           </Text>
 
           {/* Email */}
-          <TouchableOpacity onPress={this.openEmail}>
-            <Text style={styles.item}>
-              📧 <Text style={styles.bold}>Email</Text>{"\n"}
+          <TouchableOpacity style={styles.card} onPress={this.openEmail}>
+            <Icon name="email" size={22} color="#4CAF50" />
+            <Text style={styles.cardText}>
+              <Text style={styles.bold}>Email{"\n"}</Text>
               qazifazeel95@gmail.com
             </Text>
           </TouchableOpacity>
 
           {/* Phone */}
-          <TouchableOpacity onPress={this.openPhone}>
-            <Text style={styles.item}>
-              📱 <Text style={styles.bold}>Phone/WhatsApp</Text>{"\n"}
+          <TouchableOpacity style={styles.card} onPress={this.openPhone}>
+            <Icon name="phone" size={22} color="#4CAF50" />
+            <Text style={styles.cardText}>
+              <Text style={styles.bold}>Phone{"\n"}</Text>
               +92 331 5684305
             </Text>
           </TouchableOpacity>
 
-          {/* Facebook */}
-          <TouchableOpacity onPress={this.openFacebook}>
-            <Text style={styles.item}>
-              🌐 <Text style={styles.bold}>Facebook Page</Text>{"\n"}
-              Engr Qazi Fazeel Official
+          {/* WhatsApp */}
+          <TouchableOpacity style={styles.card} onPress={this.openWhatsApp}>
+            <Icon name="chat" size={22} color="#4CAF50" />
+            <Text style={styles.cardText}>
+              <Text style={styles.bold}>WhatsApp{"\n"}</Text>
+              Chat directly on WhatsApp
             </Text>
           </TouchableOpacity>
 
-          <Text style={styles.text}>
-            We’re always ready to assist you with app support, technical issues,
-            or general inquiries.
-          </Text>
+          {/* Facebook */}
+          <TouchableOpacity style={styles.card} onPress={this.openFacebook}>
+            <Icon name="public" size={22} color="#4CAF50" />
+            <Text style={styles.cardText}>
+              <Text style={styles.bold}>Facebook{"\n"}</Text>
+              Engr Qazi Fazeel Official
+            </Text>
+          </TouchableOpacity>
 
           <Text style={styles.text}>
             Thank you for using My Livestock — empowering farmers with technology!
@@ -96,16 +113,22 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#4CAF50',
+    backgroundColor: color.Secondry,
     padding: 15,
+    elevation: 4,
+  },
+
+  backButton: {
+    position: 'absolute',
+    left: 15,
   },
 
   headerTitle: {
     color: '#fff',
     fontSize: 22,
     fontWeight: 'bold',
-    marginLeft: 15,
   },
 
   content: {
@@ -125,10 +148,20 @@ const styles = StyleSheet.create({
     color: '#333',
   },
 
-  item: {
+  card: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 12,
+    alignItems: 'center',
+    elevation: 2,
+  },
+
+  cardText: {
+    marginLeft: 10,
     fontSize: 15,
-    marginBottom: 15,
-    lineHeight: 22,
+    color: '#000',
   },
 
   bold: {

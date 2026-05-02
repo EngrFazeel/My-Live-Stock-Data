@@ -1,196 +1,263 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  StatusBar,
-  Platform
-} from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+  SafeAreaView,
+  Image
+} from "react-native";
+
+import Icon from "react-native-vector-icons/MaterialIcons";
+import FontAwesome from "react-native-vector-icons/FontAwesome";
+import Ionicons from "react-native-vector-icons/Ionicons";
+
+import { launchCamera } from "react-native-image-picker";
+import { color } from "../../Color";
 
 export default class SaleAnimal extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      name: "",
+      ownerName: "",
+      phone: "",
+      date: "",
+      image: null
+    };
+  }
 
-  state = {
-    name: '',
-    owner: '',
-    phone: '',
-    date: new Date(),
-    showPicker: false,
-  };
+  // 📷 Open Camera
+  openCamera = () => {
+    const options = {
+      mediaType: "photo",
+      quality: 0.8,
+      saveToPhotos: true
+    };
 
-  showDatePicker = () => {
-    this.setState({ showPicker: true });
-  };
+    launchCamera(options, (response) => {
+      if (response.didCancel) {
+        console.log("Cancelled");
+      } else if (response.errorCode) {
+        console.log("Error: ", response.errorMessage);
+      } else {
+        const uri = response.assets[0].uri;
 
-  onChangeDate = (event, selectedDate) => {
-    const currentDate = selectedDate || this.state.date;
-    this.setState({
-      date: currentDate,
-      showPicker: Platform.OS === 'ios' // keeps open on iOS
+        this.setState({
+          image: uri
+        });
+      }
     });
-  };
-
-  formatDate = (date) => {
-    let d = date.getDate();
-    let m = date.getMonth() + 1;
-    let y = date.getFullYear();
-
-    return `${d}/${m}/${y}`;
   };
 
   render() {
     return (
-      <View style={styles.container}>
-
-        <StatusBar backgroundColor="#4CAF50" barStyle="light-content" />
-
+      <SafeAreaView style={styles.container}>
+        
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity>
-            <Icon name="arrow-back" size={26} color="#fff" />
+          <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
+            <Icon name="arrow-back" size={25} color="green" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Sale Animal</Text>
+
+          <Text style={styles.headerText}>Sale Animal</Text>
+        </View>
+
+        {/* Profile Image */}
+        <View style={styles.imageContainer}>
+          <View style={styles.profileCircle}>
+            {this.state.image ? (
+              <Image
+                source={{ uri: this.state.image }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <FontAwesome name="user" size={50} color="#fff" />
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={styles.cameraIcon}
+            onPress={this.openCamera}
+          >
+            <Ionicons name="camera" size={18} color="#fff" />
+          </TouchableOpacity>
         </View>
 
         {/* Form */}
         <View style={styles.form}>
-
-          {/* Name */}
           <View style={styles.inputBox}>
-            <Icon name="pets" size={20} color="#4CAF50" />
+            <Icon name="pets" size={20} color="green" />
             <TextInput
               placeholder="Name"
               style={styles.input}
-              value={this.state.name}
+              placeholderTextColor="#333"
               onChangeText={(text) => this.setState({ name: text })}
             />
           </View>
 
-          {/* Owner */}
           <View style={styles.inputBox}>
-            <Icon name="person" size={20} color="#4CAF50" />
+            <FontAwesome name="user" size={20} color="green" />
             <TextInput
               placeholder="New Owner Name"
               style={styles.input}
-              value={this.state.owner}
-              onChangeText={(text) => this.setState({ owner: text })}
+              placeholderTextColor="#333"
+              onChangeText={(text) => this.setState({ ownerName: text })}
             />
           </View>
 
-          {/* Phone */}
           <View style={styles.inputBox}>
-            <Icon name="phone" size={20} color="#4CAF50" />
+            <FontAwesome name="phone" size={20} color="green" />
             <TextInput
               placeholder="Phone Number"
-              keyboardType="phone-pad"
               style={styles.input}
-              value={this.state.phone}
+              keyboardType="numeric"
+              placeholderTextColor="#333"
               onChangeText={(text) => this.setState({ phone: text })}
             />
           </View>
 
-          {/* Date Picker Field */}
-          <TouchableOpacity style={styles.inputBox} onPress={this.showDatePicker}>
-            <Icon name="calendar-today" size={20} color="#4CAF50" />
-            <Text style={styles.dateText}>
-              {this.formatDate(this.state.date)}  Register date
-            </Text>
-          </TouchableOpacity>
-
+          <View style={styles.inputBox}>
+            <Ionicons name="calendar" size={20} color="green" />
+            <TextInput
+              placeholder="Register date"
+              style={styles.input}
+              placeholderTextColor="#333"
+              onChangeText={(text) => this.setState({ date: text })}
+            />
+          </View>
         </View>
-
-        {/* Show Picker */}
-        {this.state.showPicker && (
-          <DateTimePicker
-            value={this.state.date}
-            mode="date"
-            display="default"
-            onChange={this.onChangeDate}
-          />
-        )}
 
         {/* Buttons */}
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.discardBtn}>
+          <TouchableOpacity
+            style={styles.discardBtn}
+            onPress={() =>
+              this.setState({
+                name: "",
+                ownerName: "",
+                phone: "",
+                date: "",
+                image: null
+              })
+            }
+          >
             <Text style={styles.btnText}>Discard</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.confirmBtn}>
+          <TouchableOpacity
+            style={styles.confirmBtn}
+            onPress={() => this.props.navigation.navigate("Home")}
+          >
             <Text style={styles.btnText}>Confirm</Text>
           </TouchableOpacity>
         </View>
 
-      </View>
+      </SafeAreaView>
     );
   }
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#EAEAEA' },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#4CAF50',
-    padding: 15,
+  container: {
+    flex: 1,
+    backgroundColor: color.primary,
+    paddingHorizontal: 15
   },
 
-  headerTitle: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginLeft: 15,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10
+  },
+
+  headerText: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "green",
+    marginRight: 25
+  },
+
+  imageContainer: {
+    alignItems: "center",
+    marginVertical: 20
+  },
+
+  profileCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: color.Secondry,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden"
+  },
+
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 50
+  },
+
+  cameraIcon: {
+    position: "absolute",
+    bottom: 5,
+    right: 110,
+    backgroundColor: "green",
+    borderRadius: 15,
+    padding: 6
   },
 
   form: {
-    padding: 20,
+    marginTop: 10,
+    marginHorizontal: 10
   },
 
   inputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#4CAF50',
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "green",
     borderRadius: 10,
-    paddingHorizontal: 10,
-    marginBottom: 15,
-    backgroundColor: '#fff',
+    paddingHorizontal: 15,
+    marginVertical: 8,
+    height: 45
   },
 
   input: {
-    flex: 1,
-    padding: 10,
-  },
-
-  dateText: {
     marginLeft: 10,
-    paddingVertical: 12,
-    color: '#333',
+    flex: 1,
+    color: "#000"
   },
 
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 30,
+    marginHorizontal: 10
   },
 
   discardBtn: {
-    backgroundColor: 'red',
-    padding: 12,
+    backgroundColor: "red",
+    paddingVertical: 12,
     borderRadius: 10,
+    width: "45%",
+    alignItems: "center"
   },
 
   confirmBtn: {
-    backgroundColor: '#4CAF50',
-    padding: 12,
+    backgroundColor: color.Secondry,
+    paddingVertical: 12,
     borderRadius: 10,
+    width: "45%",
+    alignItems: "center"
   },
 
   btnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
+    color: "#fff",
+    fontWeight: "bold"
+  }
 });

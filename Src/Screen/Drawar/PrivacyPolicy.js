@@ -18,18 +18,24 @@ export default class PrivacyPolicyScreen extends Component {
 
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => this.props.navigation.goBack()}
+          >
             <Icon name="arrow-back" size={26} color="#fff" />
           </TouchableOpacity>
+
           <Text style={styles.headerTitle}>Privacy Policy</Text>
+
         </View>
 
         {/* Content */}
         <ScrollView contentContainerStyle={styles.content}>
 
-          <Text style={styles.text}>MyLiveStock</Text>
+          <Text style={styles.appName}>MyLiveStock</Text>
 
-          <Text style={styles.text}>Effective Date: [Insert Date]</Text>
+          <Text style={styles.date}>Effective Date: 01 January 2026</Text>
 
           <Text style={styles.text}>
             At MyLiveStock, we take your privacy seriously. This policy explains how we
@@ -39,44 +45,18 @@ export default class PrivacyPolicyScreen extends Component {
           {/* Section 1 */}
           <Text style={styles.sectionTitle}>1. Information We Collect</Text>
 
-          <Text style={styles.text}>
-            We may collect the following types of data:
-          </Text>
-
-          <Text style={styles.bullet}>
-            • Personal Information: Name, contact number, email address, and Facebook profile (if shared).
-          </Text>
-
-          <Text style={styles.bullet}>
-            • Animal Information: Nose scan image, animal type, health records, and ownership details.
-          </Text>
-
-          <Text style={styles.bullet}>
-            • Device Information: Basic device identifiers to enhance app performance.
-          </Text>
+          <Text style={styles.bullet}>• Personal Information: Name, contact number, email address, and Facebook profile (if shared).</Text>
+          <Text style={styles.bullet}>• Animal Information: Nose scan image, animal type, health records, and ownership details.</Text>
+          <Text style={styles.bullet}>• Device Information: Basic device identifiers to enhance app performance.</Text>
 
           {/* Section 2 */}
           <Text style={styles.sectionTitle}>2. How We Use Your Data</Text>
 
-          <Text style={styles.bullet}>
-            • Register users and their animals.
-          </Text>
-
-          <Text style={styles.bullet}>
-            • Match animal identity through nose scans.
-          </Text>
-
-          <Text style={styles.bullet}>
-            • Display rightful ownership to prevent theft and fraud.
-          </Text>
-
-          <Text style={styles.bullet}>
-            • Improve user experience and app functionality.
-          </Text>
-
-          <Text style={styles.bullet}>
-            • Contact users for support, updates, or verification.
-          </Text>
+          <Text style={styles.bullet}>• Register users and their animals.</Text>
+          <Text style={styles.bullet}>• Match animal identity through nose scans.</Text>
+          <Text style={styles.bullet}>• Display rightful ownership to prevent theft and fraud.</Text>
+          <Text style={styles.bullet}>• Improve user experience and app functionality.</Text>
+          <Text style={styles.bullet}>• Contact users for support, updates, or verification.</Text>
 
           {/* Section 3 */}
           <Text style={styles.sectionTitle}>3. Data Security</Text>
@@ -89,13 +69,8 @@ export default class PrivacyPolicyScreen extends Component {
           {/* Section 4 */}
           <Text style={styles.sectionTitle}>4. User Control</Text>
 
-          <Text style={styles.bullet}>
-            • View and edit your information in the app.
-          </Text>
-
-          <Text style={styles.bullet}>
-            • Request data deletion by contacting us at qazifazeel95@gmail.com.
-          </Text>
+          <Text style={styles.bullet}>• View and edit your information in the app.</Text>
+          <Text style={styles.bullet}>• Request data deletion by contacting us at qazifazeel95@gmail.com.</Text>
 
           {/* Section 5 */}
           <Text style={styles.sectionTitle}>5. Third-Party Access</Text>
@@ -126,27 +101,47 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#4CAF50',
     padding: 15,
+    elevation: 4,
+  },
+
+  backButton: {
+    position: 'absolute',
+    left: 15,
   },
 
   headerTitle: {
     color: '#fff',
     fontSize: 22,
     fontWeight: 'bold',
-    marginLeft: 15,
   },
 
   content: {
     padding: 20,
   },
 
+  appName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 5,
+    color: '#000',
+  },
+
+  date: {
+    fontSize: 13,
+    marginBottom: 10,
+    color: '#555',
+  },
+
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginTop: 10,
-    marginBottom: 5,
+    marginTop: 12,
+    marginBottom: 6,
+    color: '#000',
   },
 
   text: {
@@ -161,5 +156,6 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     lineHeight: 22,
     marginLeft: 5,
+    color: '#333',
   },
 });
