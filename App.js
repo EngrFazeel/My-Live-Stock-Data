@@ -85,6 +85,26 @@ function Main() {
   )
 }
 
+// function Main () {
+//   return(
+//     <Tab.Navigator
+//     screenOptions={{headerShown:false,tabBarStyle:{backgroundColor:'#1e8527ff',height:50,borderTopRightRadius:20,borderTopLeftRadius:20,},
+//     tabBarLabelStyle:{fontSize:15, fontWeight:'600'},
+//     tabBarActiveTintColor: "#fff", }}>
+//         <Tab.Screen name="Home"  component={Home}
+//        options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="home" size={size} color={color} />)}}/>
+//         <Tab.Screen name="Settings" component={Settings}
+//         options={{ tabBarIcon:({ color, size })=>(<Ionicons name="settings" size={size} color={color}/>)}}/>
+//         <Tab.Screen name="Scan" component={Scan}
+//         options={{ tabBarIcon:({ color, size })=>(<MaterialCommunityIcons name="line-scan" size={size} color={color}/>)}}/>
+//           <Tab.Screen name="Profile" component={Profile}
+//         options={{ tabBarIcon:({ color, size })=>(<FontAwesome5 name="user-circle" size={size} color={color}/>)}}/>
+//           <Tab.Screen name="Chat" component={Chat}
+//         options={{ tabBarIcon:({ color, size })=>(<Entypo name="chat" size={size} color={color}/>)}}/>
+//     </Tab.Navigator>
+//   )
+// }
+
 export default class App extends Component {
   render() {
     return (
