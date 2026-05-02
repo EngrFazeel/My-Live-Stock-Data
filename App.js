@@ -1,16 +1,10 @@
 import React, { Component } from 'react'
 import { NavigationContainer, } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView,Image } from "react-native";
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { DrawerItemList, createDrawerNavigator } from '@react-navigation/drawer';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import Entypo from 'react-native-vector-icons/Entypo';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 
 
@@ -46,183 +40,8 @@ import TermsCondition from './Src/Screen/Drawar/TermsCondition';
 import Setting3 from './Src/Screen/Drawar/Setting3';
 import AppInfoScreen from './Src/Screen/Drawar/AppInfo';
 
-const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
-
-function Drawertab() {
-  return (
-    <Drawer.Navigator initialRouteName="Home" screenOptions={{ headerShown: false }}
-      drawerContent={
-        (props) => {
-          return (
-            <SafeAreaView>
-              <ScrollView>
-              <View
-                style={{
-                  height: 170,
-                  width: '85%',
-                  justifyContent: 'space-evenly',
-                  alignItems: 'center',
-                  // backgroundColor: 'cyan',
-                  alignSelf: 'center'
-                }}>
-                <TouchableOpacity 
-                  style={{
-                    height: 50,
-                    width: 50,
-                    backgroundColor:'#3dac40',
-                    borderRadius: 2,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    alignSelf: 'flex-start'
-                  }}>
-                  <MaterialIcons name="arrow-back-ios" color={'white'} size={30} />
-                </TouchableOpacity>
-                <View
-                  style={{
-                    width: '98%',
-                    height: 55,
-                    backgroundColor: '#3dac40',
-                    justifyContent: 'space-around',
-                    alignItems: 'center',
-                    alignSelf: 'center',
-                    flexDirection: 'row',
-                    borderRadius: 10
-                  }}>
-                  <Image source={require('./Src/Assets/my.jpg')}
-                    style={{
-                      height: 40,
-                      width: 40,
-                    }}>
-                  </Image>
-                  <View
-                    style={{
-                      width: '75%',
-                      height: 40,
-                      // backgroundColor: 'pink',
-                      justifyContent: 'center',
-                    }}>
-                    <Text
-                      style={{
-                        fontSize: 17,
-                        fontWeight: '400',
-                        color: 'white',
-                      }}>
-                      User Name
-                    </Text>
-                    
-                  </View>
-                </View>
-                <Text
-                  style={{
-                    fontSize: 20,
-                    fontWeight: '400',
-                    color: 'black',
-                    alignSelf: 'flex-start'
-                  }}>
-                  Main Menu
-                </Text>
-              </View>
-              <DrawerItemList {...props} />
-              </ScrollView>
-            </SafeAreaView>
-          )
-        }
-      }>
-      <Drawer.Screen
-        name="Home"
-        component={Home}
-        options={{
-          drawerLabel: 'Home',
-          drawerIcon: ({ color, size }) => (
-            <EvilIcons name="user" color={'black'} size={size} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Profile"
-        component={Profile}
-        options={{
-          drawerLabel: 'Profile',
-          drawerIcon: ({ size }) => (
-            <Entypo name="user-circle" color={'black'} size={size} />
-          ),
-        }}
-      />
-     <Drawer.Screen
-        name="Sale"
-        component={Sale}
-        options={{
-          drawerLabel: 'Sale',
-          drawerIcon: ({ color, size }) => (
-            <FontAwesome name="exchange" color={'black'} size={size} />
-          ),
-        }}
-      />
-       <Drawer.Screen
-        name="Scan"
-        component={Scan}
-        options={{
-          drawerLabel: 'Scan',
-          drawerIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="line-scan" color={'black'} size={size} />
-          ),
-        }}
-      />
-         <Drawer.Screen
-        name="AppInfo"
-        component={AppInfo}
-        options={{
-          drawerLabel: 'AppInfo',
-          drawerIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="information-variant-circle-outline" color={'black'} size={size} />
-          ),
-        }}
-      />
-        <Drawer.Screen
-        name="Contactus"
-        component={Contactus}
-        options={{
-          drawerLabel: 'Contactus',
-          drawerIcon: ({ color, size }) => (
-            <MaterialIcons name="contact-emergency" color={'black'} size={size} />
-          ),
-        }}
-      />
-       <Drawer.Screen
-        name="PrivacyPolicy"
-        component={PrivacyPolicy}
-        options={{
-          drawerLabel: 'PrivacyPolicy',
-          drawerIcon: ({ color, size }) => (
-            <MaterialIcons name="privacy-tip" color={'black'} size={size} />
-          ),
-        }}
-      />
-     <Drawer.Screen
-        name="TermsCondition"
-        component={TermsCondition}
-        options={{
-          drawerLabel: 'TermsCondition',
-          drawerIcon: ({ color, size }) => (
-            <AntDesign name="insurance" color={'black'} size={size} />
-          ),
-        }}
-      />
-        <Drawer.Screen
-        name="Logout"
-        component={Login}
-        options={{
-          drawerLabel: 'Logout',
-          drawerIcon: ({ color, size }) => (
-            <MaterialIcons name="logout" color={'black'} size={size} />
-          ),
-        }}
-      />
-    </Drawer.Navigator>
-  );
-}
 
 function MyTabs () {
   return(
@@ -240,25 +59,25 @@ function MyTabs () {
   )
 }
 
-// function Main () {
-//   return(
-//     <Tab.Navigator
-//     screenOptions={{headerShown:false,tabBarStyle:{backgroundColor:'#1e8527ff',height:50,borderTopRightRadius:20,borderTopLeftRadius:20,},
-//     tabBarLabelStyle:{fontSize:15, fontWeight:'600'},
-//     tabBarActiveTintColor: "#fff", }}>
-//         <Tab.Screen name="Home"  component={Home}
-//        options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="home" size={size} color={color} />)}}/>
-//         <Tab.Screen name="Settings" component={Settings}
-//         options={{ tabBarIcon:({ color, size })=>(<Ionicons name="settings" size={size} color={color}/>)}}/>
-//         <Tab.Screen name="Scan" component={Scan}
-//         options={{ tabBarIcon:({ color, size })=>(<MaterialCommunityIcons name="line-scan" size={size} color={color}/>)}}/>
-//           <Tab.Screen name="Profile" component={Profile}
-//         options={{ tabBarIcon:({ color, size })=>(<FontAwesome5 name="user-circle" size={size} color={color}/>)}}/>
-//           <Tab.Screen name="Chat" component={Chat}
-//         options={{ tabBarIcon:({ color, size })=>(<Entypo name="chat" size={size} color={color}/>)}}/>
-//     </Tab.Navigator>
-//   )
-// }
+function Main () {
+  return(
+    <Tab.Navigator
+    screenOptions={{headerShown:false,tabBarStyle:{backgroundColor:'#1e8527ff',height:50,borderTopRightRadius:20,borderTopLeftRadius:20,},
+    tabBarLabelStyle:{fontSize:15, fontWeight:'600'},
+    tabBarActiveTintColor: "#fff", }}>
+        <Tab.Screen name="Home"  component={Home}
+       options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="home" size={size} color={color} />)}}/>
+        <Tab.Screen name="Settings" component={Settings}
+        options={{ tabBarIcon:({ color, size })=>(<Ionicons name="settings" size={size} color={color}/>)}}/>
+        <Tab.Screen name="Scan" component={Scan}
+        options={{ tabBarIcon:({ color, size })=>(<MaterialCommunityIcons name="line-scan" size={size} color={color}/>)}}/>
+          <Tab.Screen name="Profile" component={Profile}
+        options={{ tabBarIcon:({ color, size })=>(<FontAwesome5 name="user-circle" size={size} color={color}/>)}}/>
+          <Tab.Screen name="Chat" component={Chat}
+        options={{ tabBarIcon:({ color, size })=>(<Entypo name="chat" size={size} color={color}/>)}}/>
+    </Tab.Navigator>
+  )
+}
 
 export default class App extends Component {
   render() {
