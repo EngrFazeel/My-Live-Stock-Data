@@ -7,8 +7,6 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 
-
-
 import Welcome from './Src/Screen/Welcome';
 import Onboard1 from './Src/Onboarding/Onboard1';
 import Onboard2 from './Src/Onboarding/Onboard2';
@@ -115,8 +113,7 @@ export default class App extends Component {
           <Stack.Screen name="TermsCondition" component={TermsCondition} />
           <Stack.Screen name="Setting3" component={Setting3} />
 
-
-
+          
         </Stack.Navigator>
       </NavigationContainer>
     )
