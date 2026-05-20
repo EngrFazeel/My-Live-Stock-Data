@@ -1,6 +1,6 @@
 // ─── Change these two lines to point at your real server ────────────────────
-export const BASE_URL       = 'http://127.0.0.1:8000/api/';
-export const IMAGE_BASE_URL = 'http://127.0.0.1:8000/storage/images/';
+export const BASE_URL       = 'http://10.0.2.2:8000/api/';
+export const IMAGE_BASE_URL = 'http://10.0.2.2:8000/storage/images/';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const ENDPOINTS = {

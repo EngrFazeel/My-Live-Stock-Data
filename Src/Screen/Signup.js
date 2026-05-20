@@ -53,12 +53,24 @@ export default function SignupScreen({ navigation }) {
         type: 'success',
         confirmText: 'OK',
         onConfirm: () => {
-          navigation.navigate('Home');
+          // Clear form after successful signup
+          setFormData({
+            full_name: '',
+            email: '',
+            phone_number: '',
+            cnic_no: '',
+            address: '',
+            role: 'farmer',
+            password: '',
+            confirm_password: '',
+          });
+          // Navigate to Login screen
+          navigation.replace('Login');
         },
       });
       dispatch(clearAuthMessages());
     }
-  }, [success, accessToken]);
+  }, [success, accessToken, navigation]);
 
   const handleInputChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
