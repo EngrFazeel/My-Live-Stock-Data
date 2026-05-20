@@ -31,9 +31,9 @@ export default function LoginScreen({ navigation }) {
 
   // Handle success - navigate to Home
   useEffect(() => {
-    if (success && accessToken && !isNavigating) {
+    if (success && !isNavigating) {
       setIsNavigating(true);
-      
+
       showAlert({
         title: 'Success!',
         message: success,
@@ -52,7 +52,7 @@ export default function LoginScreen({ navigation }) {
         },
       });
     }
-  }, [success, accessToken, isNavigating, navigation, dispatch]);
+  }, [success, isNavigating, navigation, dispatch]);
 
   const handleLogin = () => {
     // Validation

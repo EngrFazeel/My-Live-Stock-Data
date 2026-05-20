@@ -5,7 +5,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { useDispatch, useSelector } from 'react-redux';
 import Feather from 'react-native-vector-icons/Feather';
 import { color } from '../Color';
-import { signupUser, clearAuthMessages } from '../Redux/Slices/authSlice';
+import { signupUser, clearAuthMessages, logout } from '../Redux/Slices/authSlice';
 import { showAlert } from '../Utils/SweetAlert';
 
 const roleOptions = [
@@ -46,7 +46,7 @@ export default function SignupScreen({ navigation }) {
   }, [error]);
 
   useEffect(() => {
-    if (success && accessToken) {
+    if (success) {
       showAlert({
         title: 'Success!',
         message: success,
@@ -64,13 +64,14 @@ export default function SignupScreen({ navigation }) {
             password: '',
             confirm_password: '',
           });
-          // Navigate to Login screen
+          // Clear any auth tokens (signup may auto-login); then go to Login
+          dispatch(logout());
+          dispatch(clearAuthMessages());
           navigation.replace('Login');
         },
       });
-      dispatch(clearAuthMessages());
     }
-  }, [success, accessToken, navigation]);
+  }, [success, dispatch, navigation]);
 
   const handleInputChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
