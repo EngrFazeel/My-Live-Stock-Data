@@ -1,13 +1,15 @@
-import React, { Component } from 'react'
-import { NavigationContainer, } from '@react-navigation/native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Provider } from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 
-
+import store from './Src/Redux/store';
+import SweetAlertProvider from './Src/Utils/SweetAlert';
 
 import Welcome from './Src/Screen/Welcome';
 import Onboard1 from './Src/Onboarding/Onboard1';
@@ -29,8 +31,6 @@ import Settings from './Src/Screen/Settings';
 import Chat from './Src/Screen/Chat';
 import Addanimal from './Src/Screen/Addanimal';
 import Scansave from './Src/Screen/Scansave';
-
-
 
 import Sale from './Src/Screen/Drawar/Sale';
 import AppInfo from './Src/Screen/Drawar/AppInfo';
@@ -84,9 +84,10 @@ function Main() {
     </Tab.Navigator>
   )
 }
-export default class App extends Component {
-  render() {
-    return (
+export default function App() {
+  return (
+    <Provider store={store}>
+      <SweetAlertProvider />
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Welcome" component={Welcome} />
@@ -105,7 +106,6 @@ export default class App extends Component {
           <Stack.Screen name="Addanimal" component={Addanimal} />
           <Stack.Screen name="Scansave" component={Scansave} />
 
-
           {/* Drawar */}
           <Stack.Screen name="Sale" component={Sale} />
           <Stack.Screen name="AppInfo" component={AppInfo} />
@@ -114,11 +114,8 @@ export default class App extends Component {
           <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicy} />
           <Stack.Screen name="TermsCondition" component={TermsCondition} />
           <Stack.Screen name="Setting3" component={Setting3} />
-
-
-
         </Stack.Navigator>
       </NavigationContainer>
-    )
-  }
+    </Provider>
+  );
 }
