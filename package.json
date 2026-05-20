@@ -12,6 +12,7 @@
   "dependencies": {
     "@pdftron/webviewer": "^11.11.0",
     "@react-native-community/datetimepicker": "^8.6.0",
+    "@react-native-picker/picker": "^2.11.4",
     "@react-navigation/bottom-tabs": "^6.5.11",
     "@react-navigation/drawer": "^6.6.2",
     "@react-navigation/native": "^6.1.6",
