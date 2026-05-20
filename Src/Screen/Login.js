@@ -36,12 +36,16 @@ export default function LoginScreen({ navigation }) {
         type: 'success',
         confirmText: 'OK',
         onConfirm: () => {
-          navigation.navigate('Home');
+          // Clear form after successful login
+          setCnic('');
+          setPassword('');
+          // Navigate to Home screen (Main tab navigator)
+          navigation.replace('Home');
         },
       });
       dispatch(clearAuthMessages());
     }
-  }, [success, accessToken]);
+  }, [success, accessToken, navigation]);
 
   const handleLogin = () => {
     // Validation
