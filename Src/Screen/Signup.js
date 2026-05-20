@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Image, StatusBar, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-import { Picker } from '@react-native-picker/picker';
+import { Dropdown } from 'react-native-element-dropdown';
 import { useDispatch, useSelector } from 'react-redux';
 import Feather from 'react-native-vector-icons/Feather';
 import { color } from '../Color';
 import { signupUser, clearAuthMessages } from '../Redux/Slices/authSlice';
 import { showAlert } from '../Utils/SweetAlert';
+
+const roleOptions = [
+  { label: 'Farmer', value: 'farmer' },
+  { label: 'Breeder', value: 'breeder' },
+  { label: 'Trader', value: 'trader' },
+];
 
 export default function SignupScreen({ navigation }) {
   const dispatch = useDispatch();
@@ -350,27 +356,27 @@ export default function SignupScreen({ navigation }) {
           {/* Role */}
           <View
             style={{
-              height: 50,
+              height: 55,
               marginBottom: 12,
               borderColor: color.borderColor,
               borderWidth: 2,
               borderRadius: color.borderradius,
               justifyContent: 'center',
-              overflow: 'hidden',
               backgroundColor: '#fff',
+              paddingHorizontal: 10,
             }}>
-            <Picker
-              selectedValue={formData.role}
-              onValueChange={(value) => handleInputChange('role', value)}
-              style={{ 
-                height: 50,
-                color: color.textcolor1,
-                fontSize: 16,
-              }}>
-              <Picker.Item label="Farmer" value="farmer" />
-              <Picker.Item label="Breeder" value="breeder" />
-              <Picker.Item label="Trader" value="trader" />
-            </Picker>
+            <Dropdown
+              style={{ flex: 1, backgroundColor: 'transparent' }}
+              data={roleOptions}
+              labelField="label"
+              valueField="value"
+              value={formData.role}
+              placeholder="Select role"
+              placeholderStyle={{ color: '#999', fontSize: 16 }}
+              selectedTextStyle={{ color: color.textcolor1, fontSize: 16 }}
+              onChange={(item) => handleInputChange('role', item.value)}
+              containerStyle={{ flex: 1 }}
+            />
           </View>
 
           {/* Password */}
