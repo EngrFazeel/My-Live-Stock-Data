@@ -13,10 +13,12 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { launchImageLibrary } from 'react-native-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { color } from '../../Color';
 import { getProfile, updateProfile, clearAuthMessages } from '../../Redux/Slices/authSlice';
 import { showAlert } from '../../Utils/SweetAlert';
 import { IMAGE_BASE_URL } from '../../Config/BaseUrl';
+import ApiService, { setAuthToken } from '../../Services/ApiService';
 
 export default function EditprofileScreen({ navigation }) {
   const dispatch = useDispatch();
@@ -32,10 +34,43 @@ export default function EditprofileScreen({ navigation }) {
   const [profileImage, setProfileImage] = useState(null);
   const [imageChanged, setImageChanged] = useState(false);
 
-  // Load user profile on screen mount
+  // Load user profile and set auth token on screen mount
   useEffect(() => {
-    dispatch(getProfile());
+    initializeScreen();
   }, []);
+
+  const initializeScreen = async () => {
+    try {
+      // Retrieve token from AsyncStorage
+      const token = await AsyncStorage.getItem('authToken');
+      if (token) {
+        // Set the token in API headers
+        setAuthToken(token);
+      } else {
+        showAlert({
+          title: 'Authentication Error',
+          message: 'Session expired. Please login again.',
+          type: 'error',
+          confirmText: 'OK',
+          onConfirm: () => {
+            navigation.replace('Login');
+          },
+        });
+        return;
+      }
+
+      // Load user profile data
+      dispatch(getProfile());
+    } catch (error) {
+      console.error('Error initializing screen:', error);
+      showAlert({
+        title: 'Error',
+        message: 'Failed to initialize. Please try again.',
+        type: 'error',
+        confirmText: 'OK',
+      });
+    }
+  };
 
   // Populate form with user data
   useEffect(() => {
@@ -134,7 +169,7 @@ export default function EditprofileScreen({ navigation }) {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // Validation
     if (!formData.full_name.trim()) {
       showAlert({
@@ -163,23 +198,52 @@ export default function EditprofileScreen({ navigation }) {
       return;
     }
 
-    // Create FormData for multipart request
-    const updateFormData = new FormData();
-    updateFormData.append('full_name', formData.full_name);
-    updateFormData.append('phone_number', formData.phone_number);
-    updateFormData.append('cnic_no', formData.cnic_no);
-    updateFormData.append('address', formData.address || '');
+    try {
+      // Ensure token is set before making API request
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        showAlert({
+          title: 'Authentication Error',
+          message: 'Session expired. Please login again.',
+          type: 'error',
+          confirmText: 'OK',
+          onConfirm: () => {
+            navigation.replace('Login');
+          },
+        });
+        return;
+      }
+      
+      // Set token in API headers
+      setAuthToken(token);
 
-    // Add image if changed
-    if (imageChanged && profileImage) {
-      updateFormData.append('profile_image', {
-        uri: profileImage.uri,
-        type: profileImage.type || 'image/jpeg',
-        name: profileImage.fileName || 'profile.jpg',
+      // Create FormData for multipart request
+      const updateFormData = new FormData();
+      updateFormData.append('full_name', formData.full_name);
+      updateFormData.append('phone_number', formData.phone_number);
+      updateFormData.append('cnic_no', formData.cnic_no);
+      updateFormData.append('address', formData.address || '');
+
+      // Add image if changed
+      if (imageChanged && profileImage) {
+        updateFormData.append('profile_image', {
+          uri: profileImage.uri,
+          type: profileImage.type || 'image/jpeg',
+          name: profileImage.fileName || 'profile.jpg',
+        });
+      }
+
+      // Dispatch update action
+      dispatch(updateProfile(updateFormData));
+    } catch (error) {
+      console.error('Error in handleSave:', error);
+      showAlert({
+        title: 'Error',
+        message: 'Failed to save profile. Please try again.',
+        type: 'error',
+        confirmText: 'OK',
       });
     }
-
-    dispatch(updateProfile(updateFormData));
   };
 
   const getImageSource = () => {
