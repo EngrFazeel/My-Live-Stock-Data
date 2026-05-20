@@ -10,12 +10,13 @@ import { showAlert } from '../Utils/SweetAlert';
 export default function LoginScreen({ navigation }) {
   const dispatch = useDispatch();
   const { loading, error, success, accessToken } = useSelector((state) => state.auth);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const [cnic_no, setCnic] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Show alerts based on Redux state
+  // Handle errors
   useEffect(() => {
     if (error) {
       showAlert({
@@ -26,10 +27,13 @@ export default function LoginScreen({ navigation }) {
       });
       dispatch(clearAuthMessages());
     }
-  }, [error]);
+  }, [error, dispatch]);
 
+  // Handle success - navigate to Home
   useEffect(() => {
-    if (success && accessToken) {
+    if (success && accessToken && !isNavigating) {
+      setIsNavigating(true);
+      
       showAlert({
         title: 'Success!',
         message: success,
@@ -39,13 +43,16 @@ export default function LoginScreen({ navigation }) {
           // Clear form after successful login
           setCnic('');
           setPassword('');
-          // Navigate to Home screen (Main tab navigator)
-          navigation.replace('Home');
+          // Clear Redux messages
+          dispatch(clearAuthMessages());
+          // Navigate to Home screen
+          setTimeout(() => {
+            navigation.replace('Home');
+          }, 300);
         },
       });
-      dispatch(clearAuthMessages());
     }
-  }, [success, accessToken, navigation]);
+  }, [success, accessToken, isNavigating, navigation, dispatch]);
 
   const handleLogin = () => {
     // Validation
