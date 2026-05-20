@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,129 +6,212 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  StatusBar
+  StatusBar,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { color } from '../Color';
+import { showAlert } from '../Utils/SweetAlert';
+import { setAuthToken } from '../Services/ApiService';
 
-export default class UserDetails extends Component {
+export default function ProfileScreen({ navigation }) {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  state = {
-    user: {
-      email: 'engineerqazifazeel@gmail.com',
-      name: 'Qazi Fazeel',
-      phone: '03315684305',
-      cnic: '32403-8618115-5',
-      address: 'Rahim Yar Khan',
+  // Load user data from AsyncStorage when component mounts
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+
+      // Retrieve token from AsyncStorage
+      const token = await AsyncStorage.getItem('authToken');
+      if (token) {
+        // Set the token in API headers for future requests
+        setAuthToken(token);
+      }
+      
+      // Get userData from AsyncStorage
+      const storedUserData = await AsyncStorage.getItem('userData');
+      
+      if (storedUserData) {
+        const parsedData = JSON.parse(storedUserData);
+        
+        // Extract user information
+        const userInfo = {
+          email: parsedData.user?.email || 'N/A',
+          full_name: parsedData.user?.full_name || 'N/A',
+          phone_number: parsedData.user?.phone_number || 'N/A',
+          cnic_no: parsedData.user?.cnic_no || parsedData.cnic_no || 'N/A',
+          address: parsedData.user?.address || 'N/A',
+          role: parsedData.user?.role || 'N/A',
+        };
+        
+        setUser(userInfo);
+      } else {
+        // If no stored data, show alert
+        showAlert({
+          title: 'No Data',
+          message: 'No user data found. Please login again.',
+          type: 'warning',
+          confirmText: 'OK',
+          onConfirm: () => {
+            navigation.replace('Login');
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      showAlert({
+        title: 'Error',
+        message: 'Failed to load user data. Please try again.',
+        type: 'error',
+        confirmText: 'OK',
+        onConfirm: () => {
+          navigation.replace('Login');
+        },
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  goBack = () => {
-    this.props.navigation.goBack();
+  const goBack = () => {
+    navigation.goBack();
   };
 
-  goToEdit = () => {
-    this.props.navigation.navigate('Editprofile', {
-      userData: this.state.user
-    });
+  const goToEdit = () => {
+    if (user) {
+      navigation.navigate('Editprofile', {
+        userData: user
+      });
+    }
   };
 
-  renderInput = (placeholder, value, icon) => {
+  const renderInput = (placeholder, value, icon) => {
     return (
       <View style={styles.inputBox}>
         <TextInput
-          value={value}
+          value={value || 'N/A'}
           editable={false}
           placeholder={placeholder}
           style={styles.input}
-          placeholderTextColor="#000"
+          placeholderTextColor="#999"
         />
-        <Icon name={icon} size={22} color="#4CAF50" />
+        <Icon name={icon} size={22} color={color.Secondry} />
       </View>
     );
   };
 
-  render() {
-    const { user } = this.state;
-
+  if (loading) {
     return (
-      <View style={styles.container}>
-
-        <StatusBar backgroundColor= {color.Secondry} barStyle="light-content" />
-
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={this.goBack}>
-            <Icon name="arrow-back" size={26} color={color.primary} />
-          </TouchableOpacity>
-
-          <Text style={styles.title}>User Details</Text>
-        </View>
-
-        {/* Profile Image */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={(require('../Assets/my.jpg'))}
-            style={styles.image}
-          />
-        </View>
-
-        {/* Inputs */}
-        {this.renderInput('Email', user.email, 'check')}
-        {this.renderInput('Name', user.name, 'person')}
-        {this.renderInput('Phone Number', user.phone, 'call')}
-        {this.renderInput('CNIC NO', user.cnic, 'credit-card')}
-        {this.renderInput('Address', user.address, 'location-on')}
-
-        {/* Buttons */}
-        <View style={styles.buttonRow}>
-
-          <TouchableOpacity style={styles.backBtn} onPress={this.goBack}>
-            <Text style={styles.btnText}>Back</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.editBtn} onPress={this.goToEdit}>
-            <Text style={styles.btnText}>Edit</Text>
-          </TouchableOpacity>
-
-        </View>
-
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={color.Secondry} />
+        <Text style={{ marginTop: 10, color: color.Secondry, fontSize: 16 }}>
+          Loading user profile...
+        </Text>
       </View>
     );
   }
+
+  if (!user) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: color.Secondry, fontSize: 16, marginBottom: 20 }}>
+          No user data available
+        </Text>
+        <TouchableOpacity style={styles.editBtn} onPress={() => loadUserData()}>
+          <Text style={styles.btnText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <StatusBar backgroundColor={color.Secondry} barStyle="light-content" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={goBack}>
+          <Icon name="arrow-back" size={26} color={color.primary} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Profile</Text>
+      </View>
+
+      {/* Profile Image */}
+      <View style={styles.imageContainer}>
+        <Image
+          source={require('../Assets/my.jpg')}
+          style={styles.image}
+        />
+        <Text style={styles.userName}>{user.full_name}</Text>
+      </View>
+
+      {/* User Info Inputs */}
+      <View style={{ flex: 1 }}>
+        {renderInput('Email', user.email, 'email')}
+        {renderInput('Full Name', user.full_name, 'person')}
+        {renderInput('Phone Number', user.phone_number, 'phone')}
+        {renderInput('CNIC Number', user.cnic_no, 'credit-card')}
+        {renderInput('Address', user.address, 'location-on')}
+        {renderInput('Role', user.role, 'badge')}
+      </View>
+
+      {/* Buttons */}
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.backBtn} onPress={goBack}>
+          <Text style={styles.btnText}>Back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.editBtn} onPress={goToEdit}>
+          <Text style={styles.btnText}>Edit</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: color.primary,
-    // paddingTop: 10
   },
 
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor:color.Secondry
+    backgroundColor: color.Secondry,
   },
 
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: color.primary,
-    marginLeft: 80
+    marginLeft: 80,
   },
 
   imageContainer: {
     alignItems: 'center',
-    marginVertical: 15
+    marginVertical: 15,
   },
 
   image: {
     width: 120,
     height: 120,
-    borderRadius: 60
+    borderRadius: 60,
+  },
+
+  userName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: color.Secondry,
+    marginTop: 10,
   },
 
   inputBox: {
@@ -141,37 +224,40 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 10,
     backgroundColor: '#fff',
-    height: 50
+    height: 50,
   },
 
   input: {
     flex: 1,
-    color: '#000'
+    color: '#000',
+    fontSize: 14,
   },
 
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 20
+    marginBottom: 20,
+    paddingHorizontal: 20,
   },
 
   backBtn: {
     backgroundColor: color.Secondry,
     paddingVertical: 12,
-    width: '40%',
-    borderRadius: 10
+    width: '45%',
+    borderRadius: 10,
   },
 
   editBtn: {
     backgroundColor: color.Secondry,
     paddingVertical: 12,
-    width: '40%',
-    borderRadius: 10
+    width: '45%',
+    borderRadius: 10,
   },
 
   btnText: {
     color: '#fff',
     fontWeight: 'bold',
-    textAlign:'center'
-  }
+    textAlign: 'center',
+    fontSize: 16,
+  },
 });

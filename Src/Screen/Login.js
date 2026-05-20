@@ -3,13 +3,16 @@ import { Image, StatusBar, Text, TextInput, TouchableOpacity, View, ActivityIndi
 import { ScrollView } from 'react-native-gesture-handler';
 import { useDispatch, useSelector } from 'react-redux';
 import Feather from 'react-native-vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { color } from '../Color';
 import { loginUser, clearAuthMessages } from '../Redux/Slices/authSlice';
 import { showAlert } from '../Utils/SweetAlert';
+import { setAuthToken } from '../Services/ApiService';
 
 export default function LoginScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { loading, error, success, accessToken } = useSelector((state) => state.auth);
+  const auth = useSelector((state) => state.auth);
+  const { loading, error, success, accessToken, user } = auth;
   const [isNavigating, setIsNavigating] = useState(false);
 
   const [cnic_no, setCnic] = useState('');
@@ -39,20 +42,49 @@ export default function LoginScreen({ navigation }) {
         message: success,
         type: 'success',
         confirmText: 'OK',
-        onConfirm: () => {
-          // Clear form after successful login
-          setCnic('');
-          setPassword('');
-          // Clear Redux messages
-          dispatch(clearAuthMessages());
-          // Navigate to Home screen
-          setTimeout(() => {
-            navigation.replace('Home');
-          }, 300);
+        onConfirm: async () => {
+          try {
+            // Prepare user data to store
+            const userData = {
+              user: user,
+              accessToken: accessToken,
+              refreshToken: auth.refreshToken,
+              cnic_no: cnic_no,
+              loginTime: new Date().toISOString(),
+            };
+            
+            // Save to AsyncStorage
+            await AsyncStorage.multiSet([
+              ['authToken', accessToken],
+              ['refreshToken', auth.refreshToken || ''],
+              ['userData', JSON.stringify(userData)],
+            ]);
+            
+            // Set token in API headers for future requests
+            setAuthToken(accessToken);
+            
+            // Clear form after successful login
+            setCnic('');
+            setPassword('');
+            // Clear Redux messages
+            dispatch(clearAuthMessages());
+            // Navigate to Home screen
+            setTimeout(() => {
+              navigation.replace('Home');
+            }, 300);
+          } catch (error) {
+            console.error('AsyncStorage Error:', error);
+            showAlert({
+              title: 'Error',
+              message: 'Failed to save login data. Please try again.',
+              type: 'error',
+              confirmText: 'OK',
+            });
+          }
         },
       });
     }
-  }, [success, accessToken, isNavigating, navigation, dispatch]);
+  }, [success, accessToken, isNavigating, navigation, dispatch, cnic_no, user, auth]);
 
   const handleLogin = () => {
     // Validation
