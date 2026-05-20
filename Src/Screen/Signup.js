@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Image, StatusBar, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Picker } from 'react-native';
+import { Image, StatusBar, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import { Picker } from '@react-native-picker/picker';
 import { useDispatch, useSelector } from 'react-redux';
 import Feather from 'react-native-vector-icons/Feather';
 import { color } from '../Color';
@@ -343,11 +344,17 @@ export default function SignupScreen({ navigation }) {
               borderWidth: 2,
               borderRadius: color.borderradius,
               justifyContent: 'center',
+              overflow: 'hidden',
+              backgroundColor: '#fff',
             }}>
             <Picker
               selectedValue={formData.role}
               onValueChange={(value) => handleInputChange('role', value)}
-              style={{ color: color.textcolor1 }}>
+              style={{ 
+                height: 50,
+                color: color.textcolor1,
+                fontSize: 16,
+              }}>
               <Picker.Item label="Farmer" value="farmer" />
               <Picker.Item label="Breeder" value="breeder" />
               <Picker.Item label="Trader" value="trader" />
