@@ -1,511 +1,355 @@
-import React, { useState, useEffect } from 'react';
-import { Image, StatusBar, Text, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Image,
+  StatusBar,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useDispatch, useSelector } from 'react-redux';
 import Feather from 'react-native-vector-icons/Feather';
+
 import { color } from '../Color';
 import { signupUser, clearAuthMessages, logout } from '../Redux/Slices/authSlice';
 import { showAlert } from '../Utils/SweetAlert';
 
-const roleOptions = [
-  { label: 'Farmer', value: 'farmer' },
+const ROLES = [
+  { label: 'Farmer',  value: 'farmer'  },
   { label: 'Breeder', value: 'breeder' },
-  { label: 'Trader', value: 'trader' },
+  { label: 'Trader',  value: 'trader'  },
 ];
+
+const EMPTY_FORM = {
+  full_name:        '',
+  email:            '',
+  phone_number:     '',
+  cnic_no:          '',
+  address:          '',
+  role:             'farmer',
+  password:         '',
+  confirm_password: '',
+};
 
 export default function SignupScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { loading, error, success, accessToken } = useSelector((state) => state.auth);
+  const { loading, error, success } = useSelector((s) => s.auth);
 
-  const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    phone_number: '',
-    cnic_no: '',
-    address: '',
-    role: 'farmer',
-    password: '',
-    confirm_password: '',
-  });
+  const [form,                setForm]                = useState(EMPTY_FORM);
+  const [showPass,            setShowPass]            = useState(false);
+  const [showConfirmPass,     setShowConfirmPass]     = useState(false);
+  const successHandled = useRef(false);
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
-  // Show alerts based on Redux state
+  // ─── Error alert ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (error) {
-      showAlert({
-        title: 'Signup Failed',
-        message: error,
-        type: 'error',
-        confirmText: 'Try Again',
-      });
-      dispatch(clearAuthMessages());
-    }
+    if (!error) return;
+    showAlert({
+      title:       'Signup Failed',
+      message:     typeof error === 'string' ? error : 'Something went wrong. Please try again.',
+      type:        'error',
+      confirmText: 'Try Again',
+      onConfirm:   () => dispatch(clearAuthMessages()),
+    });
   }, [error]);
 
+  // ─── Success → show alert → go to Login ──────────────────────────────────
   useEffect(() => {
-    if (success) {
-      showAlert({
-        title: 'Success!',
-        message: success,
-        type: 'success',
-        confirmText: 'OK',
-        onConfirm: () => {
-          // Clear form after successful signup
-          setFormData({
-            full_name: '',
-            email: '',
-            phone_number: '',
-            cnic_no: '',
-            address: '',
-            role: 'farmer',
-            password: '',
-            confirm_password: '',
-          });
-          // Clear any auth tokens (signup may auto-login); then go to Login
-          dispatch(logout());
-          dispatch(clearAuthMessages());
-          navigation.replace('Login');
-        },
-      });
-    }
-  }, [success, dispatch, navigation]);
+    if (!success || successHandled.current) return;
+    successHandled.current = true;
 
-  const handleInputChange = (name, value) => {
-    setFormData({ ...formData, [name]: value });
-  };
+    showAlert({
+      title:       'Signup Successful!',
+      message:     'Your account has been created.\nPlease login to continue.',
+      type:        'success',
+      confirmText: 'Go to Login',
+      onConfirm:   () => {
+        setForm(EMPTY_FORM);
+        dispatch(logout());           // clears any auto-login tokens from signup
+        dispatch(clearAuthMessages());
+        successHandled.current = false;
+        navigation.replace('Login');  // replace so back button won't return to Signup
+      },
+    });
+  }, [success]);
 
+  // ─── Validation + dispatch ────────────────────────────────────────────────
   const handleSignup = () => {
-    // Validation
-    const { full_name, email, phone_number, cnic_no, password, confirm_password } = formData;
+    const { full_name, email, phone_number, cnic_no, password, confirm_password } = form;
 
     if (!full_name.trim()) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Please enter your full name',
-        type: 'warning',
-      });
+      showAlert({ title: 'Missing Field', message: 'Please enter your full name.', type: 'warning' });
       return;
     }
-
     if (!email.trim()) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Please enter your email',
-        type: 'warning',
-      });
+      showAlert({ title: 'Missing Field', message: 'Please enter your email address.', type: 'warning' });
       return;
     }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Please enter a valid email address',
-        type: 'warning',
-      });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      showAlert({ title: 'Invalid Email', message: 'Please enter a valid email address.', type: 'warning' });
       return;
     }
-
     if (!phone_number.trim()) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Please enter your phone number',
-        type: 'warning',
-      });
+      showAlert({ title: 'Missing Field', message: 'Please enter your phone number.', type: 'warning' });
       return;
     }
-
     if (!cnic_no.trim()) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Please enter your CNIC number',
-        type: 'warning',
-      });
+      showAlert({ title: 'Missing Field', message: 'Please enter your CNIC number.', type: 'warning' });
       return;
     }
-
     if (!password) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Please enter a password',
-        type: 'warning',
-      });
+      showAlert({ title: 'Missing Field', message: 'Please enter a password.', type: 'warning' });
       return;
     }
-
     if (password.length < 8) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Password must be at least 8 characters long',
-        type: 'warning',
-      });
+      showAlert({ title: 'Weak Password', message: 'Password must be at least 8 characters.', type: 'warning' });
       return;
     }
-
     if (password !== confirm_password) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Passwords do not match',
-        type: 'warning',
-      });
+      showAlert({ title: 'Password Mismatch', message: 'Passwords do not match. Please re-enter.', type: 'warning' });
       return;
     }
 
-    // Create FormData for multipart request
-    const signupFormData = new FormData();
-    signupFormData.append('full_name', full_name);
-    signupFormData.append('email', email);
-    signupFormData.append('phone_number', phone_number);
-    signupFormData.append('cnic_no', cnic_no);
-    signupFormData.append('address', formData.address);
-    signupFormData.append('role', formData.role);
-    signupFormData.append('password', password);
-    signupFormData.append('confirm_password', confirm_password);
+    const payload = new FormData();
+    payload.append('full_name',        full_name.trim());
+    payload.append('email',            email.trim());
+    payload.append('phone_number',     phone_number.trim());
+    payload.append('cnic_no',          cnic_no.trim());
+    payload.append('address',          form.address.trim());
+    payload.append('role',             form.role);
+    payload.append('password',         password);
+    payload.append('confirm_password', confirm_password);
 
-    // Dispatch signup action
-    dispatch(signupUser(signupFormData));
+    successHandled.current = false;
+    dispatch(signupUser(payload));
   };
 
+  // ─── UI ───────────────────────────────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: color.textcolor2 }}>
       <StatusBar backgroundColor={color.StatusBar} />
-      <ScrollView>
-        {/* Logo Section */}
-        <View
-          style={{
-            height: 250,
-            width: '100%',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
+
+      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+        {/* Logo */}
+        <View style={styles.logoWrap}>
           <Image
             source={require('../Assets/Logo.png')}
-            style={{
-              height: 170,
-              width: 170,
-              borderRadius: 200,
-            }}
+            style={styles.logo}
           />
-          <Text
-            style={{
-              fontSize: 26,
-              fontWeight: '900',
-              color: color.Secondry,
-              marginTop: 10,
-            }}>
-            SignUp
-          </Text>
+          <Text style={styles.title}>SignUp</Text>
         </View>
 
-        {/* Form Fields */}
-        <View
-          style={{
-            width: '90%',
-            justifyContent: 'space-around',
-            alignSelf: 'center',
-            marginBottom: 20,
-          }}>
-          {/* Full Name */}
-          <View
-            style={{
-              height: 50,
-              marginBottom: 12,
-              borderColor: color.borderColor,
-              borderWidth: 2,
-              borderRadius: color.borderradius,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-            <TextInput
-              style={{
-                fontSize: 16,
-                fontWeight: '400',
-                height: 55,
-                width: '88%',
-                color: color.textcolor1,
-                paddingLeft: 10,
-              }}
-              placeholder="Full Name"
-              placeholderTextColor={'#999'}
-              cursorColor={color.Secondry}
-              value={formData.full_name}
-              onChangeText={(text) => handleInputChange('full_name', text)}
-            />
-            <Feather name="user" size={25} marginLeft={-5} color={color.Secondry} />
-          </View>
+        {/* Fields */}
+        <View style={styles.fieldWrap}>
 
-          {/* Email */}
-          <View
-            style={{
-              height: 50,
-              marginBottom: 12,
-              borderColor: color.borderColor,
-              borderWidth: 2,
-              borderRadius: color.borderradius,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-            <TextInput
-              style={{
-                fontSize: 16,
-                fontWeight: '400',
-                height: 55,
-                width: '88%',
-                color: color.textcolor1,
-                paddingLeft: 10,
-              }}
-              placeholder="Email"
-              placeholderTextColor={'#999'}
-              keyboardType="email-address"
-              cursorColor={color.Secondry}
-              value={formData.email}
-              onChangeText={(text) => handleInputChange('email', text)}
-            />
-            <Feather name="mail" size={25} marginLeft={-5} color={color.Secondry} />
-          </View>
+          <Field icon="user" placeholder="Full Name"
+            value={form.full_name} onChangeText={(v) => set('full_name', v)} />
 
-          {/* Phone Number */}
-          <View
-            style={{
-              height: 50,
-              marginBottom: 12,
-              borderColor: color.borderColor,
-              borderWidth: 2,
-              borderRadius: color.borderradius,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-            <TextInput
-              style={{
-                fontSize: 16,
-                fontWeight: '400',
-                height: 55,
-                width: '88%',
-                color: color.textcolor1,
-                paddingLeft: 10,
-              }}
-              placeholder="Phone Number"
-              placeholderTextColor={'#999'}
-              keyboardType="phone-pad"
-              cursorColor={color.Secondry}
-              value={formData.phone_number}
-              onChangeText={(text) => handleInputChange('phone_number', text)}
-            />
-            <Feather name="phone" size={25} marginLeft={-5} color={color.Secondry} />
-          </View>
+          <Field icon="mail" placeholder="Email Address"
+            keyboardType="email-address"
+            value={form.email} onChangeText={(v) => set('email', v)} />
 
-          {/* CNIC */}
-          <View
-            style={{
-              height: 50,
-              marginBottom: 12,
-              borderColor: color.borderColor,
-              borderWidth: 2,
-              borderRadius: color.borderradius,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-            <TextInput
-              style={{
-                fontSize: 16,
-                fontWeight: '400',
-                height: 55,
-                width: '88%',
-                color: color.textcolor1,
-                paddingLeft: 10,
-              }}
-              placeholder="CNIC Number"
-              placeholderTextColor={'#999'}
-              cursorColor={color.Secondry}
-              value={formData.cnic_no}
-              onChangeText={(text) => handleInputChange('cnic_no', text)}
-            />
-            <Feather name="credit-card" size={25} marginLeft={-5} color={color.Secondry} />
-          </View>
+          <Field icon="phone" placeholder="Phone Number"
+            keyboardType="phone-pad"
+            value={form.phone_number} onChangeText={(v) => set('phone_number', v)} />
 
-          {/* Address */}
-          <View
-            style={{
-              height: 50,
-              marginBottom: 12,
-              borderColor: color.borderColor,
-              borderWidth: 2,
-              borderRadius: color.borderradius,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
-            <TextInput
-              style={{
-                fontSize: 16,
-                fontWeight: '400',
-                height: 55,
-                width: '88%',
-                color: color.textcolor1,
-                paddingLeft: 10,
-              }}
-              placeholder="Address"
-              placeholderTextColor={'#999'}
-              cursorColor={color.Secondry}
-              value={formData.address}
-              onChangeText={(text) => handleInputChange('address', text)}
-            />
-            <Feather name="map-pin" size={25} marginLeft={-5} color={color.Secondry} />
-          </View>
+          <Field icon="credit-card" placeholder="CNIC Number"
+            keyboardType="numeric" maxLength={13}
+            value={form.cnic_no} onChangeText={(v) => set('cnic_no', v)} />
 
-          {/* Role */}
-          <View
-            style={{
-              height: 55,
-              marginBottom: 12,
-              borderColor: color.borderColor,
-              borderWidth: 2,
-              borderRadius: color.borderradius,
-              justifyContent: 'center',
-              backgroundColor: '#fff',
-              paddingHorizontal: 10,
-            }}>
+          <Field icon="map-pin" placeholder="Address"
+            value={form.address} onChangeText={(v) => set('address', v)} />
+
+          {/* Role dropdown */}
+          <View style={styles.dropdownWrap}>
             <Dropdown
-              style={{ flex: 1, backgroundColor: 'transparent' }}
-              data={roleOptions}
+              style={styles.dropdown}
+              data={ROLES}
               labelField="label"
               valueField="value"
-              value={formData.role}
-              placeholder="Select role"
+              value={form.role}
+              placeholder="Select Role"
               placeholderStyle={{ color: '#999', fontSize: 16 }}
               selectedTextStyle={{ color: color.textcolor1, fontSize: 16 }}
-              onChange={(item) => handleInputChange('role', item.value)}
-              containerStyle={{ flex: 1 }}
+              onChange={(item) => set('role', item.value)}
             />
+            <Feather name="users" size={22} color={color.Secondry} style={{ marginRight: 4 }} />
           </View>
 
           {/* Password */}
-          <View
-            style={{
-              height: 50,
-              marginBottom: 12,
-              borderColor: color.borderColor,
-              borderWidth: 2,
-              borderRadius: color.borderradius,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
+          <View style={styles.inputRow}>
             <TextInput
-              style={{
-                fontSize: 16,
-                fontWeight: '400',
-                height: 55,
-                width: '88%',
-                color: color.textcolor1,
-                paddingLeft: 10,
-              }}
+              style={styles.inputText}
               placeholder="Password"
-              placeholderTextColor={'#999'}
-              secureTextEntry={!showPassword}
+              placeholderTextColor="#999"
+              secureTextEntry={!showPass}
               cursorColor={color.Secondry}
-              value={formData.password}
-              onChangeText={(text) => handleInputChange('password', text)}
+              value={form.password}
+              onChangeText={(v) => set('password', v)}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Feather name={showPassword ? 'eye' : 'eye-off'} size={25} marginLeft={-5} color={color.Secondry} />
+            <TouchableOpacity onPress={() => setShowPass(!showPass)}>
+              <Feather name={showPass ? 'eye' : 'eye-off'} size={22} color={color.Secondry} />
             </TouchableOpacity>
           </View>
 
           {/* Confirm Password */}
-          <View
-            style={{
-              height: 50,
-              marginBottom: 12,
-              borderColor: color.borderColor,
-              borderWidth: 2,
-              borderRadius: color.borderradius,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}>
+          <View style={styles.inputRow}>
             <TextInput
-              style={{
-                fontSize: 16,
-                fontWeight: '400',
-                height: 55,
-                width: '88%',
-                color: color.textcolor1,
-                paddingLeft: 10,
-              }}
+              style={styles.inputText}
               placeholder="Confirm Password"
-              placeholderTextColor={'#999'}
-              secureTextEntry={!showConfirmPassword}
+              placeholderTextColor="#999"
+              secureTextEntry={!showConfirmPass}
               cursorColor={color.Secondry}
-              value={formData.confirm_password}
-              onChangeText={(text) => handleInputChange('confirm_password', text)}
+              value={form.confirm_password}
+              onChangeText={(v) => set('confirm_password', v)}
             />
-            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-              <Feather name={showConfirmPassword ? 'eye' : 'eye-off'} size={25} marginLeft={-5} color={color.Secondry} />
+            <TouchableOpacity onPress={() => setShowConfirmPass(!showConfirmPass)}>
+              <Feather name={showConfirmPass ? 'eye' : 'eye-off'} size={22} color={color.Secondry} />
             </TouchableOpacity>
           </View>
+
         </View>
 
-        {/* Signup Button */}
+        {/* Signup button */}
         <TouchableOpacity
           onPress={handleSignup}
           disabled={loading}
-          style={{
-            height: 50,
-            width: '80%',
-            borderRadius: color.borderradius,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: color.Secondry,
-            alignSelf: 'center',
-            marginTop: 15,
-            opacity: loading ? 0.6 : 1,
-          }}>
+          style={[styles.signupBtn, loading && { opacity: 0.65 }]}>
           {loading ? (
-            <ActivityIndicator size="large" color={color.textcolor2} />
+            <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: '800',
-                color: color.textcolor2,
-                textAlign: 'center',
-              }}>
-              SignUp
-            </Text>
+            <Text style={styles.signupBtnText}>SignUp</Text>
           )}
         </TouchableOpacity>
 
-        {/* Login Link */}
-        <View
-          style={{
-            marginTop: 30,
-            marginBottom: 20,
-            flexDirection: 'row',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-          <Text
-            style={{
-              color: 'black',
-              fontSize: 18,
-              fontWeight: '500',
-            }}>
-            Already have an Account?
-          </Text>
+        {/* Already have account */}
+        <View style={styles.loginRow}>
+          <Text style={styles.loginText}>Already have an Account?</Text>
           <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text
-              style={{
-                color: color.Secondry,
-                fontSize: 20,
-                marginTop: -3,
-                fontWeight: '700',
-              }}>
-              {' '}
-              Sign In
-            </Text>
+            <Text style={styles.loginLink}> Sign In</Text>
           </TouchableOpacity>
         </View>
+
       </ScrollView>
     </View>
   );
 }
+
+// ─── Reusable field component ────────────────────────────────────────────────
+
+function Field({ icon, placeholder, value, onChangeText, keyboardType, maxLength }) {
+  return (
+    <View style={styles.inputRow}>
+      <TextInput
+        style={styles.inputText}
+        placeholder={placeholder}
+        placeholderTextColor="#999"
+        cursorColor={color.Secondry}
+        keyboardType={keyboardType || 'default'}
+        maxLength={maxLength}
+        value={value}
+        onChangeText={onChangeText}
+      />
+      <Feather name={icon} size={22} color={color.Secondry} />
+    </View>
+  );
+}
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  logoWrap: {
+    height:         240,
+    justifyContent: 'center',
+    alignItems:     'center',
+  },
+  logo: {
+    height:       170,
+    width:        170,
+    borderRadius: 200,
+  },
+  title: {
+    fontSize:   26,
+    fontWeight: '900',
+    color:      color.Secondry,
+    marginTop:  10,
+  },
+
+  fieldWrap: {
+    width:      '90%',
+    alignSelf:  'center',
+    marginBottom: 8,
+    gap:        12,
+  },
+
+  inputRow: {
+    height:            50,
+    borderColor:       color.Secondry,
+    borderWidth:       2,
+    borderRadius:      color.borderradius,
+    flexDirection:     'row',
+    alignItems:        'center',
+    paddingHorizontal: 12,
+    backgroundColor:   '#fff',
+  },
+  inputText: {
+    flex:     1,
+    fontSize: 16,
+    color:    color.textcolor1,
+    height:   50,
+  },
+
+  dropdownWrap: {
+    height:            50,
+    borderColor:       color.Secondry,
+    borderWidth:       2,
+    borderRadius:      color.borderradius,
+    flexDirection:     'row',
+    alignItems:        'center',
+    paddingHorizontal: 12,
+    backgroundColor:   '#fff',
+  },
+  dropdown: {
+    flex: 1,
+  },
+
+  signupBtn: {
+    height:          50,
+    width:           '80%',
+    borderRadius:    color.borderradius,
+    justifyContent:  'center',
+    alignItems:      'center',
+    backgroundColor: color.Secondry,
+    alignSelf:       'center',
+    marginTop:       12,
+  },
+  signupBtnText: {
+    fontSize:   20,
+    fontWeight: '800',
+    color:      '#fff',
+  },
+
+  loginRow: {
+    marginTop:      24,
+    marginBottom:   30,
+    flexDirection:  'row',
+    justifyContent: 'center',
+    alignItems:     'center',
+  },
+  loginText: {
+    color:      'black',
+    fontSize:   17,
+    fontWeight: '500',
+  },
+  loginLink: {
+    color:      color.Secondry,
+    fontSize:   18,
+    fontWeight: '700',
+  },
+});

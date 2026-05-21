@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,309 +7,150 @@ import {
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
-  Alert,
   Image,
+  ScrollView,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { launchImageLibrary } from 'react-native-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { color } from '../../Color';
 import { getProfile, updateProfile, clearAuthMessages } from '../../Redux/Slices/authSlice';
 import { showAlert } from '../../Utils/SweetAlert';
 import { IMAGE_BASE_URL } from '../../Config/BaseUrl';
-import ApiService, { setAuthToken } from '../../Services/ApiService';
 
 export default function EditprofileScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { user, loading, error, success } = useSelector((state) => state.auth);
+  const { user, loading, error, success } = useSelector((s) => s.auth);
 
-  const [formData, setFormData] = useState({
-    full_name: '',
+  const [form, setForm] = useState({
+    full_name:    '',
     phone_number: '',
-    cnic_no: '',
-    address: '',
+    cnic_no:      '',
+    address:      '',
   });
+  const [pickedImage,   setPickedImage]   = useState(null); // local file object
+  const successHandled = useRef(false);
 
-  const [profileImage, setProfileImage] = useState(null);
-  const [imageChanged, setImageChanged] = useState(false);
-
-  // Load user profile and set auth token on screen mount
+  // ─── Load profile on mount (token already in Axios headers from login) ──────
   useEffect(() => {
-    initializeScreen();
-  }, [dispatch, navigation]);
-
-  const initializeScreen = async () => {
-    try {
-      // Retrieve token from AsyncStorage
-      let token;
-      try {
-        token = await AsyncStorage.getItem('authToken');
-      } catch (asyncError) {
-        console.error('AsyncStorage.getItem error:', asyncError);
-        showAlert({
-          title: 'Storage Error',
-          message: 'Failed to retrieve authentication data. Please login again.',
-          type: 'error',
-          confirmText: 'OK',
-          onConfirm: () => {
-            navigation.replace('Login');
-          },
-        });
-        return;
-      }
-
-      if (token) {
-        // Set the token in API headers
-        setAuthToken(token);
-      } else {
-        showAlert({
-          title: 'Authentication Error',
-          message: 'Session expired. Please login again.',
-          type: 'error',
-          confirmText: 'OK',
-          onConfirm: () => {
-            navigation.replace('Login');
-          },
-        });
-        return;
-      }
-
-      // Load user profile data
-      try {
-        const result = await dispatch(getProfile()).unwrap();
-        console.log('Profile loaded successfully:', result);
-      } catch (profileError) {
-        console.error('Failed to load profile:', profileError);
-        showAlert({
-          title: 'Error',
-          message: 'Failed to load profile. Please try again.',
-          type: 'error',
-          confirmText: 'OK',
-        });
-      }
-    } catch (error) {
-      console.error('Error initializing screen:', error);
-      showAlert({
-        title: 'Error',
-        message: 'Failed to initialize. Please try again.',
-        type: 'error',
-        confirmText: 'OK',
-      });
+    // If we already have user data in Redux, no need to re-fetch
+    if (!user) {
+      dispatch(getProfile());
     }
-  };
+  }, []);
 
-  // Populate form with user data
+  // ─── Sync form whenever Redux user changes ────────────────────────────────
   useEffect(() => {
-    if (user) {
-      setFormData({
-        full_name: user.full_name || '',
-        phone_number: user.phone_number || '',
-        cnic_no: user.cnic_no || '',
-        address: user.address || '',
-      });
-      if (user.profile_image) {
-        setProfileImage(user.profile_image);
-      }
-    }
+    if (!user) return;
+    setForm({
+      full_name:    user.full_name    || '',
+      phone_number: user.phone_number || '',
+      cnic_no:      user.cnic_no      || '',
+      address:      user.address      || '',
+    });
   }, [user]);
 
-  // Show alerts based on Redux state
+  // ─── Error alert ─────────────────────────────────────────────────────────
   useEffect(() => {
-    if (error) {
-      showAlert({
-        title: 'Update Failed',
-        message: error || 'An error occurred while updating your profile.',
-        type: 'error',
-        confirmText: 'Try Again',
-      });
-      dispatch(clearAuthMessages());
-    }
-  }, [error, dispatch]);
+    if (!error) return;
+    showAlert({
+      title:       'Update Failed',
+      message:     typeof error === 'string' ? error : 'An error occurred. Please try again.',
+      type:        'error',
+      confirmText: 'OK',
+      onConfirm:   () => dispatch(clearAuthMessages()),
+    });
+  }, [error]);
 
+  // ─── Success alert ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (success) {
-      showAlert({
-        title: 'Success!',
-        message: success,
-        type: 'success',
-        confirmText: 'OK',
-        onConfirm: () => {
-          navigation.goBack();
-        },
-      });
-      dispatch(clearAuthMessages());
-    }
-  }, [success, dispatch, navigation]);
+    if (!success || successHandled.current) return;
+    successHandled.current = true;
+    showAlert({
+      title:       'Updated!',
+      message:     success,
+      type:        'success',
+      confirmText: 'OK',
+      onConfirm:   () => {
+        dispatch(clearAuthMessages());
+        successHandled.current = false;
+        navigation.goBack();
+      },
+    });
+  }, [success]);
 
-  const handleInputChange = (name, value) => {
-    setFormData({ ...formData, [name]: value });
-  };
-
+  // ─── Image picker ─────────────────────────────────────────────────────────
   const handlePickImage = () => {
     launchImageLibrary(
-      {
-        mediaType: 'photo',
-        includeBase64: false,
-        maxHeight: 200,
-        maxWidth: 200,
-      },
+      { mediaType: 'photo', maxHeight: 400, maxWidth: 400, includeBase64: false },
       (response) => {
-        if (response.didCancel) {
-          // User cancelled
-        } else if (response.errorCode) {
-          showAlert({
-            title: 'Error',
-            message: 'Failed to pick image',
-            type: 'error',
-          });
-        } else {
-          const asset = response.assets[0];
-          setProfileImage(asset);
-          setImageChanged(true);
-        }
+        if (response.didCancel || response.errorCode) return;
+        setPickedImage(response.assets[0]);
       }
     );
   };
 
+  // ─── Discard ──────────────────────────────────────────────────────────────
   const handleDiscard = () => {
     showAlert({
-      title: 'Discard Changes',
-      message: 'Are you sure you want to discard?',
-      type: 'confirm',
-      confirmText: 'Yes',
-      cancelText: 'No',
-      onConfirm: () => {
-        // Reset form to original user data
-        if (user) {
-          setFormData({
-            full_name: user.full_name || '',
-            phone_number: user.phone_number || '',
-            cnic_no: user.cnic_no || '',
-            address: user.address || '',
-          });
-          setProfileImage(user.profile_image);
-          setImageChanged(false);
-        }
-        navigation.goBack();
-      },
+      title:       'Discard Changes',
+      message:     'Are you sure you want to discard all changes?',
+      type:        'confirm',
+      confirmText: 'Yes, Discard',
+      cancelText:  'Keep Editing',
+      onConfirm:   () => navigation.goBack(),
     });
   };
 
-  const handleSave = async () => {
-    // Validation
-    if (!formData.full_name.trim()) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Please enter your full name',
-        type: 'warning',
-      });
+  // ─── Save ─────────────────────────────────────────────────────────────────
+  const handleSave = () => {
+    if (!form.full_name.trim()) {
+      showAlert({ title: 'Missing Field', message: 'Please enter your full name.', type: 'warning' });
+      return;
+    }
+    if (!form.phone_number.trim()) {
+      showAlert({ title: 'Missing Field', message: 'Please enter your phone number.', type: 'warning' });
+      return;
+    }
+    if (!form.cnic_no.trim()) {
+      showAlert({ title: 'Missing Field', message: 'Please enter your CNIC number.', type: 'warning' });
       return;
     }
 
-    if (!formData.phone_number.trim()) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Please enter your phone number',
-        type: 'warning',
-      });
-      return;
-    }
+    const payload = new FormData();
+    payload.append('full_name',    form.full_name.trim());
+    payload.append('phone_number', form.phone_number.trim());
+    payload.append('cnic_no',      form.cnic_no.trim());
+    payload.append('address',      form.address.trim());
 
-    if (!formData.cnic_no.trim()) {
-      showAlert({
-        title: 'Validation Error',
-        message: 'Please enter your CNIC number',
-        type: 'warning',
-      });
-      return;
-    }
-
-    try {
-      // Ensure token is set before making API request
-      let token;
-      try {
-        token = await AsyncStorage.getItem('authToken');
-      } catch (asyncError) {
-        console.error('AsyncStorage.getItem error:', asyncError);
-        showAlert({
-          title: 'Storage Error',
-          message: 'Failed to retrieve authentication data.',
-          type: 'error',
-          confirmText: 'OK',
-        });
-        return;
-      }
-
-      if (!token) {
-        showAlert({
-          title: 'Authentication Error',
-          message: 'Session expired. Please login again.',
-          type: 'error',
-          confirmText: 'OK',
-          onConfirm: () => {
-            navigation.replace('Login');
-          },
-        });
-        return;
-      }
-      
-      // Set token in API headers
-      setAuthToken(token);
-
-      // Create FormData for multipart request
-      const updateFormData = new FormData();
-      updateFormData.append('full_name', formData.full_name);
-      updateFormData.append('phone_number', formData.phone_number);
-      updateFormData.append('cnic_no', formData.cnic_no);
-      updateFormData.append('address', formData.address || '');
-
-      // Add image if changed
-      if (imageChanged && profileImage) {
-        updateFormData.append('profile_image', {
-          uri: profileImage.uri,
-          type: profileImage.type || 'image/jpeg',
-          name: profileImage.fileName || 'profile.jpg',
-        });
-      }
-
-      // Dispatch update action and wait for result
-      try {
-        const result = await dispatch(updateProfile(updateFormData)).unwrap();
-        console.log('Profile updated successfully:', result);
-        // Alert will be shown by the success useEffect
-      } catch (updateError) {
-        console.error('Profile update error:', updateError);
-        throw updateError;
-      }
-    } catch (error) {
-      console.error('Error in handleSave:', error);
-      showAlert({
-        title: 'Error',
-        message: error?.message || 'Failed to save profile. Please try again.',
-        type: 'error',
-        confirmText: 'OK',
+    if (pickedImage) {
+      payload.append('profile_image', {
+        uri:  pickedImage.uri,
+        type: pickedImage.type || 'image/jpeg',
+        name: pickedImage.fileName || 'profile.jpg',
       });
     }
+
+    successHandled.current = false;
+    dispatch(updateProfile(payload));
   };
 
-  const getImageSource = () => {
-    if (profileImage) {
-      if (typeof profileImage === 'string') {
-        // URL from user object
-        return { uri: `${IMAGE_BASE_URL}${profileImage}` };
-      } else {
-        // Local file object from image picker
-        return { uri: profileImage.uri };
-      }
-    }
+  // ─── Resolve the avatar URI ───────────────────────────────────────────────
+  const avatarSource = () => {
+    if (pickedImage)                 return { uri: pickedImage.uri };
+    if (user?.profile_image)         return { uri: `${IMAGE_BASE_URL}${user.profile_image}` };
     return null;
   };
 
+  const avatar = avatarSource();
+
+  // ─── Full-screen loader while fetching profile for the first time ─────────
   if (loading && !user) {
     return (
-      <View style={[styles.container, { justifyContent: 'center' }]}>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={color.Secondry} />
+        <Text style={{ color: color.Secondry, marginTop: 12 }}>Loading profile…</Text>
       </View>
     );
   }
@@ -324,187 +165,222 @@ export default function EditprofileScreen({ navigation }) {
           <Icon name="arrow-back" size={26} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
+        {/* Spacer to center title */}
+        <View style={{ width: 26 }} />
       </View>
 
-      {/* Profile Image */}
-      <View style={styles.imageContainer}>
-        <TouchableOpacity onPress={handlePickImage} style={styles.imageCircle}>
-          {getImageSource() ? (
-            <Image source={getImageSource()} style={styles.profileImage} />
-          ) : (
-            <Icon name="person" size={60} color="#fff" />
-          )}
-          <View style={styles.cameraIcon}>
-            <Icon name="camera-alt" size={18} color="#fff" />
+      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+
+        {/* Avatar */}
+        <View style={styles.avatarWrap}>
+          <TouchableOpacity onPress={handlePickImage} style={styles.avatarCircle}>
+            {avatar ? (
+              <Image source={avatar} style={styles.avatarImg} />
+            ) : (
+              <Icon name="person" size={62} color="#fff" />
+            )}
+            <View style={styles.cameraTag}>
+              <Icon name="camera-alt" size={16} color="#fff" />
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.tapText}>Tap to change photo</Text>
+        </View>
+
+        {/* Form */}
+        <View style={styles.form}>
+
+          <Text style={styles.label}>Full Name</Text>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="Full Name"
+              placeholderTextColor="#aaa"
+              value={form.full_name}
+              onChangeText={(v) => setForm({ ...form, full_name: v })}
+            />
+            <Icon name="person" size={22} color={color.Secondry} />
           </View>
-        </TouchableOpacity>
-      </View>
 
-      {/* Form */}
-      <View style={styles.form}>
-        {/* Name */}
-        <View style={styles.inputBox}>
-          <TextInput
-            placeholder="Full Name"
-            style={styles.input}
-            value={formData.full_name}
-            onChangeText={(text) => handleInputChange('full_name', text)}
-            placeholderTextColor="#999"
-          />
-          <Icon name="person" size={22} color={color.Secondry} />
+          <Text style={styles.label}>Phone Number</Text>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="Phone Number"
+              placeholderTextColor="#aaa"
+              keyboardType="phone-pad"
+              value={form.phone_number}
+              onChangeText={(v) => setForm({ ...form, phone_number: v })}
+            />
+            <Icon name="phone" size={22} color={color.Secondry} />
+          </View>
+
+          <Text style={styles.label}>CNIC Number</Text>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="CNIC Number"
+              placeholderTextColor="#aaa"
+              keyboardType="numeric"
+              maxLength={13}
+              value={form.cnic_no}
+              onChangeText={(v) => setForm({ ...form, cnic_no: v })}
+            />
+            <Icon name="credit-card" size={22} color={color.Secondry} />
+          </View>
+
+          <Text style={styles.label}>Address</Text>
+          <View style={[styles.inputRow, { alignItems: 'flex-start', paddingTop: 10 }]}>
+            <TextInput
+              style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+              placeholder="Address"
+              placeholderTextColor="#aaa"
+              multiline
+              value={form.address}
+              onChangeText={(v) => setForm({ ...form, address: v })}
+            />
+            <Icon name="location-on" size={22} color={color.Secondry} style={{ marginTop: 2 }} />
+          </View>
+
         </View>
 
-        {/* Phone */}
-        <View style={styles.inputBox}>
-          <TextInput
-            placeholder="Phone Number"
-            keyboardType="phone-pad"
-            style={styles.input}
-            value={formData.phone_number}
-            onChangeText={(text) => handleInputChange('phone_number', text)}
-            placeholderTextColor="#999"
-          />
-          <Icon name="phone" size={22} color={color.Secondry} />
+        {/* Buttons */}
+        <View style={styles.btnRow}>
+          <TouchableOpacity
+            style={[styles.btn, styles.discardBtn]}
+            onPress={handleDiscard}
+            disabled={loading}>
+            <Text style={styles.btnText}>Discard</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.btn, styles.saveBtn, loading && { opacity: 0.65 }]}
+            onPress={handleSave}
+            disabled={loading}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.btnText}>Save</Text>
+            )}
+          </TouchableOpacity>
         </View>
 
-        {/* CNIC */}
-        <View style={styles.inputBox}>
-          <TextInput
-            placeholder="CNIC NO"
-            style={styles.input}
-            value={formData.cnic_no}
-            onChangeText={(text) => handleInputChange('cnic_no', text)}
-            placeholderTextColor="#999"
-          />
-          <Icon name="credit-card" size={22} color={color.Secondry} />
-        </View>
-
-        {/* Address */}
-        <View style={styles.inputBox}>
-          <TextInput
-            placeholder="Address"
-            style={styles.input}
-            value={formData.address}
-            onChangeText={(text) => handleInputChange('address', text)}
-            placeholderTextColor="#999"
-          />
-          <Icon name="location-on" size={22} color={color.Secondry} />
-        </View>
-      </View>
-
-      {/* Buttons */}
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.discardBtn} onPress={handleDiscard} disabled={loading}>
-          <Text style={styles.btnText}>Discard</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.btnText}>Save</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: color.primary,
+    flex:            1,
+    backgroundColor: '#f5f5f5',
   },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection:   'row',
+    alignItems:      'center',
+    justifyContent:  'space-between',
     backgroundColor: color.Secondry,
-    padding: 15,
+    paddingHorizontal: 16,
+    paddingVertical:   14,
   },
 
   headerTitle: {
-    color: '#fff',
-    fontSize: 22,
+    color:      '#fff',
+    fontSize:   20,
     fontWeight: 'bold',
-    marginLeft: 75,
   },
 
-  imageContainer: {
-    alignItems: 'center',
-    marginVertical: 20,
+  avatarWrap: {
+    alignItems:    'center',
+    marginVertical: 24,
   },
 
-  imageCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  avatarCircle: {
+    width:           110,
+    height:          110,
+    borderRadius:    55,
     backgroundColor: color.Secondry,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent:  'center',
+    alignItems:      'center',
   },
 
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  avatarImg: {
+    width:        110,
+    height:       110,
+    borderRadius: 55,
   },
 
-  cameraIcon: {
-    position: 'absolute',
-    bottom: 5,
-    right: 5,
-    backgroundColor: color.Secondry,
-    borderRadius: 15,
-    padding: 5,
+  cameraTag: {
+    position:        'absolute',
+    bottom:          4,
+    right:           4,
+    backgroundColor: '#333',
+    borderRadius:    14,
+    padding:         5,
+  },
+
+  tapText: {
+    marginTop:  8,
+    color:      '#888',
+    fontSize:   13,
   },
 
   form: {
     paddingHorizontal: 20,
-    flex: 1,
   },
 
-  inputBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: color.Secondry,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    marginBottom: 15,
-    backgroundColor: '#fff',
+  label: {
+    fontSize:     13,
+    fontWeight:   '600',
+    color:        '#555',
+    marginBottom:  4,
+    marginLeft:    4,
+  },
+
+  inputRow: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    borderWidth:       2,
+    borderColor:       color.Secondry,
+    borderRadius:      10,
+    paddingHorizontal: 12,
+    backgroundColor:   '#fff',
+    marginBottom:      14,
   },
 
   input: {
-    flex: 1,
-    padding: 10,
-    color: color.textcolor1,
+    flex:      1,
+    fontSize:  15,
+    color:     '#333',
+    paddingVertical: 10,
   },
 
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
+  btnRow: {
+    flexDirection:   'row',
+    justifyContent:  'space-between',
     paddingHorizontal: 20,
+    paddingVertical:   20,
+    gap:             12,
+  },
+
+  btn: {
+    flex:           1,
+    paddingVertical: 13,
+    borderRadius:    10,
+    alignItems:      'center',
   },
 
   discardBtn: {
-    backgroundColor: 'red',
-    paddingVertical: 12,
-    width: '40%',
-    borderRadius: 10,
+    backgroundColor: '#e53935',
   },
 
   saveBtn: {
     backgroundColor: color.Secondry,
-    paddingVertical: 12,
-    width: '40%',
-    borderRadius: 10,
   },
 
   btnText: {
-    color: '#fff',
+    color:      '#fff',
     fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize:   16,
   },
 });
