@@ -49,10 +49,10 @@ export const updateProfile = createAsyncThunk(
   'auth/updateProfile',
   async (formData, { rejectWithValue }) => {
     try {
-      const config = formData instanceof FormData
-        ? { headers: { 'Content-Type': 'multipart/form-data' } }
-        : {};
-      const res = await ApiService.patch(ENDPOINTS.UPDATE_PROFILE, formData, config);
+      // Do NOT set Content-Type manually for FormData — the native XHR sets it
+      // automatically with the correct multipart boundary. Overriding it strips
+      // the boundary and causes server-side parse failures.
+      const res = await ApiService.patch(ENDPOINTS.UPDATE_PROFILE, formData);
       return res.data;
     } catch (err) {
       return rejectWithValue(err);

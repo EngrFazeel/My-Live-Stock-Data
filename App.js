@@ -71,8 +71,8 @@ function Main() {
         tabBarLabelStyle: { fontSize: 15, fontWeight: '600' },
         tabBarActiveTintColor: "#fff",
       }}>
-      <Tab.Screen name="Home" component={Home}
-        options={{ tabBarIcon: ({ color, size }) => (<Ionicons name="home" size={size} color={color} />) }} />
+      <Tab.Screen name="HomeTab" component={Home}
+        options={{ tabBarLabel: 'Home', tabBarIcon: ({ color, size }) => (<Ionicons name="home" size={size} color={color} />) }} />
       <Tab.Screen name="Sale" component={SaleAnimal}
         options={{ tabBarIcon: ({ color, size }) => (<MaterialIcons name="sell" size={size} color={color} />) }} />
       <Tab.Screen name="Scan" component={Scan}

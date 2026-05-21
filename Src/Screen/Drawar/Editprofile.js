@@ -9,19 +9,28 @@ import {
   ActivityIndicator,
   Image,
   ScrollView,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { launchImageLibrary } from 'react-native-image-picker';
 
 import { color } from '../../Color';
 import { getProfile, updateProfile, clearAuthMessages } from '../../Redux/Slices/authSlice';
 import { showAlert } from '../../Utils/SweetAlert';
 import { IMAGE_BASE_URL } from '../../Config/BaseUrl';
+import { setAuthToken } from '../../Services/ApiService';
+
+// Lazy-import image picker to avoid crash when native module is null
+let launchImageLibrary = null;
+try {
+  launchImageLibrary = require('react-native-image-picker').launchImageLibrary;
+} catch (_) {}
 
 export default function EditprofileScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { user, loading, error, success } = useSelector((s) => s.auth);
+  const { user, loading, error, success, accessToken } =
+    useSelector((s) => s.auth);
 
   const [form, setForm] = useState({
     full_name:    '',
@@ -29,18 +38,16 @@ export default function EditprofileScreen({ navigation }) {
     cnic_no:      '',
     address:      '',
   });
-  const [pickedImage,   setPickedImage]   = useState(null); // local file object
+  const [pickedImage,  setPickedImage]  = useState(null);
   const successHandled = useRef(false);
 
-  // ─── Load profile on mount (token already in Axios headers from login) ──────
+  // ─── On mount: re-assert token into Axios headers, then load profile ────
   useEffect(() => {
-    // If we already have user data in Redux, no need to re-fetch
-    if (!user) {
-      dispatch(getProfile());
-    }
+    if (accessToken) setAuthToken(accessToken);
+    if (!user)       dispatch(getProfile());
   }, []);
 
-  // ─── Sync form whenever Redux user changes ────────────────────────────────
+  // ─── Sync form when Redux user data arrives ───────────────────────────────
   useEffect(() => {
     if (!user) return;
     setForm({
@@ -51,12 +58,12 @@ export default function EditprofileScreen({ navigation }) {
     });
   }, [user]);
 
-  // ─── Error alert ─────────────────────────────────────────────────────────
+  // ─── Error alert ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!error) return;
     showAlert({
       title:       'Update Failed',
-      message:     typeof error === 'string' ? error : 'An error occurred. Please try again.',
+      message:     typeof error === 'string' ? error : 'Something went wrong. Please try again.',
       type:        'error',
       confirmText: 'OK',
       onConfirm:   () => dispatch(clearAuthMessages()),
@@ -68,7 +75,7 @@ export default function EditprofileScreen({ navigation }) {
     if (!success || successHandled.current) return;
     successHandled.current = true;
     showAlert({
-      title:       'Updated!',
+      title:       'Profile Updated!',
       message:     success,
       type:        'success',
       confirmText: 'OK',
@@ -80,15 +87,76 @@ export default function EditprofileScreen({ navigation }) {
     });
   }, [success]);
 
+  // ─── Request Android storage permission ──────────────────────────────────
+  const requestStoragePermission = async () => {
+    if (Platform.OS !== 'android') return true;
+    try {
+      // Android 13+ uses READ_MEDIA_IMAGES; older versions use READ_EXTERNAL_STORAGE
+      const permission =
+        Platform.Version >= 33
+          ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
+          : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
+
+      const already = await PermissionsAndroid.check(permission);
+      if (already) return true;
+
+      const result = await PermissionsAndroid.request(permission, {
+        title:   'Photo Access',
+        message: 'MyLiveStockData needs access to your gallery to update your profile photo.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Deny',
+      });
+      return result === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (_) {
+      return false;
+    }
+  };
+
   // ─── Image picker ─────────────────────────────────────────────────────────
-  const handlePickImage = () => {
-    launchImageLibrary(
-      { mediaType: 'photo', maxHeight: 400, maxWidth: 400, includeBase64: false },
-      (response) => {
-        if (response.didCancel || response.errorCode) return;
-        setPickedImage(response.assets[0]);
-      }
-    );
+  const handlePickImage = async () => {
+    if (!launchImageLibrary) {
+      showAlert({
+        title:   'Rebuild Required',
+        message: 'Image picker native module is not linked. Please run: npx react-native run-android',
+        type:    'warning',
+      });
+      return;
+    }
+
+    const hasPermission = await requestStoragePermission();
+    if (!hasPermission) {
+      showAlert({
+        title:   'Permission Denied',
+        message: 'Please allow photo access in your device settings.',
+        type:    'warning',
+      });
+      return;
+    }
+
+    try {
+      launchImageLibrary(
+        { mediaType: 'photo', maxHeight: 500, maxWidth: 500, includeBase64: false },
+        (response) => {
+          if (!response || response.didCancel) return;
+          if (response.errorCode) {
+            showAlert({
+              title:   'Picker Error',
+              message: response.errorMessage || 'Could not open gallery.',
+              type:    'error',
+            });
+            return;
+          }
+          const asset = response.assets?.[0];
+          if (asset) setPickedImage(asset);
+        }
+      );
+    } catch (e) {
+      showAlert({
+        title:   'Error',
+        message: 'Could not open image picker. Please try again.',
+        type:    'error',
+      });
+    }
   };
 
   // ─── Discard ──────────────────────────────────────────────────────────────
@@ -118,6 +186,22 @@ export default function EditprofileScreen({ navigation }) {
       return;
     }
 
+    // Guard: session must be active
+    if (!accessToken) {
+      showAlert({
+        title:       'Session Expired',
+        message:     'Your session has expired. Please login again.',
+        type:        'error',
+        confirmText: 'Login',
+        onConfirm:   () => navigation.replace('Login'),
+      });
+      return;
+    }
+
+    // Re-assert token into Axios headers before the API call.
+    // This handles hot-reload scenarios where module-level Axios defaults are reset.
+    setAuthToken(accessToken);
+
     const payload = new FormData();
     payload.append('full_name',    form.full_name.trim());
     payload.append('phone_number', form.phone_number.trim());
@@ -136,16 +220,15 @@ export default function EditprofileScreen({ navigation }) {
     dispatch(updateProfile(payload));
   };
 
-  // ─── Resolve the avatar URI ───────────────────────────────────────────────
+  // ─── Avatar source ────────────────────────────────────────────────────────
   const avatarSource = () => {
-    if (pickedImage)                 return { uri: pickedImage.uri };
-    if (user?.profile_image)         return { uri: `${IMAGE_BASE_URL}${user.profile_image}` };
+    if (pickedImage)       return { uri: pickedImage.uri };
+    if (user?.profile_image) return { uri: `${IMAGE_BASE_URL}${user.profile_image}` };
     return null;
   };
-
   const avatar = avatarSource();
 
-  // ─── Full-screen loader while fetching profile for the first time ─────────
+  // ─── Full-screen loader while first fetch ─────────────────────────────────
   if (loading && !user) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -165,7 +248,6 @@ export default function EditprofileScreen({ navigation }) {
           <Icon name="arrow-back" size={26} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        {/* Spacer to center title */}
         <View style={{ width: 26 }} />
       </View>
 
@@ -259,7 +341,7 @@ export default function EditprofileScreen({ navigation }) {
             {loading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.btnText}>Save</Text>
+              <Text style={styles.btnText}>Save Changes</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -270,117 +352,47 @@ export default function EditprofileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex:            1,
-    backgroundColor: '#f5f5f5',
-  },
+  container:   { flex: 1, backgroundColor: '#f5f5f5' },
 
   header: {
-    flexDirection:   'row',
-    alignItems:      'center',
-    justifyContent:  'space-between',
-    backgroundColor: color.Secondry,
+    flexDirection:     'row',
+    alignItems:        'center',
+    justifyContent:    'space-between',
+    backgroundColor:   color.Secondry,
     paddingHorizontal: 16,
     paddingVertical:   14,
   },
+  headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
 
-  headerTitle: {
-    color:      '#fff',
-    fontSize:   20,
-    fontWeight: 'bold',
-  },
-
-  avatarWrap: {
-    alignItems:    'center',
-    marginVertical: 24,
-  },
-
+  avatarWrap:   { alignItems: 'center', marginVertical: 24 },
   avatarCircle: {
-    width:           110,
-    height:          110,
-    borderRadius:    55,
+    width: 110, height: 110, borderRadius: 55,
     backgroundColor: color.Secondry,
-    justifyContent:  'center',
-    alignItems:      'center',
+    justifyContent: 'center', alignItems: 'center',
   },
+  avatarImg:  { width: 110, height: 110, borderRadius: 55 },
+  cameraTag:  {
+    position: 'absolute', bottom: 4, right: 4,
+    backgroundColor: '#333', borderRadius: 14, padding: 5,
+  },
+  tapText: { marginTop: 8, color: '#888', fontSize: 13 },
 
-  avatarImg: {
-    width:        110,
-    height:       110,
-    borderRadius: 55,
-  },
-
-  cameraTag: {
-    position:        'absolute',
-    bottom:          4,
-    right:           4,
-    backgroundColor: '#333',
-    borderRadius:    14,
-    padding:         5,
-  },
-
-  tapText: {
-    marginTop:  8,
-    color:      '#888',
-    fontSize:   13,
-  },
-
-  form: {
-    paddingHorizontal: 20,
-  },
-
-  label: {
-    fontSize:     13,
-    fontWeight:   '600',
-    color:        '#555',
-    marginBottom:  4,
-    marginLeft:    4,
-  },
+  form:  { paddingHorizontal: 20 },
+  label: { fontSize: 13, fontWeight: '600', color: '#555', marginBottom: 4, marginLeft: 4 },
 
   inputRow: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    borderWidth:       2,
-    borderColor:       color.Secondry,
-    borderRadius:      10,
-    paddingHorizontal: 12,
-    backgroundColor:   '#fff',
-    marginBottom:      14,
+    flexDirection: 'row', alignItems: 'center',
+    borderWidth: 2, borderColor: color.Secondry, borderRadius: 10,
+    paddingHorizontal: 12, backgroundColor: '#fff', marginBottom: 14,
   },
-
-  input: {
-    flex:      1,
-    fontSize:  15,
-    color:     '#333',
-    paddingVertical: 10,
-  },
+  input: { flex: 1, fontSize: 15, color: '#333', paddingVertical: 10 },
 
   btnRow: {
-    flexDirection:   'row',
-    justifyContent:  'space-between',
-    paddingHorizontal: 20,
-    paddingVertical:   20,
-    gap:             12,
+    flexDirection: 'row', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 20, gap: 12,
   },
-
-  btn: {
-    flex:           1,
-    paddingVertical: 13,
-    borderRadius:    10,
-    alignItems:      'center',
-  },
-
-  discardBtn: {
-    backgroundColor: '#e53935',
-  },
-
-  saveBtn: {
-    backgroundColor: color.Secondry,
-  },
-
-  btnText: {
-    color:      '#fff',
-    fontWeight: 'bold',
-    fontSize:   16,
-  },
+  btn:        { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center' },
+  discardBtn: { backgroundColor: '#e53935' },
+  saveBtn:    { backgroundColor: color.Secondry },
+  btnText:    { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });

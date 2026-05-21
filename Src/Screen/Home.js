@@ -155,7 +155,7 @@ export default class Home extends Component {
 
           <Text style={styles.drawerTitle}>Menu</Text>
 
-          <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.navigateTo("Home")}>
+          <TouchableOpacity style={styles.drawerItemRow} onPress={() => this.toggleDrawer()}>
             <Entypo name="home" size={22} color={color.Secondry} />
             <Text style={styles.drawerText}>Home</Text>
           </TouchableOpacity>
