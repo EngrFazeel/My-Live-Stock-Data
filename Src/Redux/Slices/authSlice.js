@@ -117,6 +117,14 @@ const authSlice = createSlice({
       state.error   = null;
       state.success = null;
     },
+    // Called by the Axios interceptor after a silent token refresh
+    updateAccessToken: (state, action) => {
+      state.accessToken  = action.payload.access;
+      // Keep the rotated refresh token if the server returned one
+      if (action.payload.refresh) {
+        state.refreshToken = action.payload.refresh;
+      }
+    },
   },
   extraReducers: (builder) => {
     const pending  = (state)         => { state.loading = true;  state.error = null; };

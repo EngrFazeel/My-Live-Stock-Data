@@ -134,26 +134,34 @@ export default function EditprofileScreen({ navigation }) {
     }
 
     try {
-      launchImageLibrary(
-        { mediaType: 'photo', maxHeight: 500, maxWidth: 500, includeBase64: false },
-        (response) => {
-          if (!response || response.didCancel) return;
-          if (response.errorCode) {
-            showAlert({
-              title:   'Picker Error',
-              message: response.errorMessage || 'Could not open gallery.',
-              type:    'error',
-            });
-            return;
-          }
-          const asset = response.assets?.[0];
-          if (asset) setPickedImage(asset);
-        }
-      );
+      // Use the Promise (await) form — the callback form swallows native-module
+      // errors as unhandled rejections; await lets our catch block handle them.
+      const response = await launchImageLibrary({
+        mediaType:      'photo',
+        maxHeight:      500,
+        maxWidth:       500,
+        includeBase64:  false,
+        selectionLimit: 1,
+      });
+
+      if (!response || response.didCancel) return;
+
+      if (response.errorCode) {
+        showAlert({
+          title:   'Picker Error',
+          message: response.errorMessage || 'Could not open gallery.',
+          type:    'error',
+        });
+        return;
+      }
+
+      const asset = response.assets?.[0];
+      if (asset) setPickedImage(asset);
+
     } catch (e) {
       showAlert({
-        title:   'Error',
-        message: 'Could not open image picker. Please try again.',
+        title:   'Image Picker Error',
+        message: 'Could not open gallery. Please rebuild the app or check permissions.',
         type:    'error',
       });
     }
@@ -186,21 +194,10 @@ export default function EditprofileScreen({ navigation }) {
       return;
     }
 
-    // Guard: session must be active
-    if (!accessToken) {
-      showAlert({
-        title:       'Session Expired',
-        message:     'Your session has expired. Please login again.',
-        type:        'error',
-        confirmText: 'Login',
-        onConfirm:   () => navigation.replace('Login'),
-      });
-      return;
-    }
-
-    // Re-assert token into Axios headers before the API call.
-    // This handles hot-reload scenarios where module-level Axios defaults are reset.
-    setAuthToken(accessToken);
+    // Re-assert token into Axios headers (handles hot-reload header loss).
+    // If the token is expired the interceptor in ApiService will silently
+    // refresh it using the refresh token before this request fires.
+    if (accessToken) setAuthToken(accessToken);
 
     const payload = new FormData();
     payload.append('full_name',    form.full_name.trim());

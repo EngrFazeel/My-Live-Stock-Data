@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer   from './Slices/authSlice';
 import animalReducer from './Slices/animalSlice';
+import { setStore }  from '../Services/ApiService';
 
 const store = configureStore({
   reducer: {
@@ -9,8 +10,12 @@ const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false, // needed because we pass FormData (non-serializable) in actions
+      serializableCheck: false,
     }),
 });
+
+// Give the Axios interceptor a reference to the store so it can read
+// refresh tokens and dispatch logout/updateAccessToken automatically.
+setStore(store);
 
 export default store;
