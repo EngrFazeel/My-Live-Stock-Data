@@ -44,22 +44,49 @@ export default function LoginScreen({ navigation }) {
         confirmText: 'OK',
         onConfirm: async () => {
           try {
+            // Validate required data before storing
+            if (!accessToken || typeof accessToken !== 'string') {
+              throw new Error('Invalid access token');
+            }
+
+            if (!user || typeof user !== 'object') {
+              throw new Error('Invalid user data');
+            }
+
             // Prepare user data to store
             const userData = {
               user: user,
               accessToken: accessToken,
-              refreshToken: auth.refreshToken,
-              cnic_no: cnic_no,
+              refreshToken: auth.refreshToken || null,
+              cnic_no: cnic_no || '',
               loginTime: new Date().toISOString(),
             };
             
-            // Save to AsyncStorage
-            await AsyncStorage.multiSet([
+            // Convert to JSON and validate
+            const userDataJson = JSON.stringify(userData);
+            const refreshTokenStr = auth.refreshToken && typeof auth.refreshToken === 'string' 
+              ? auth.refreshToken 
+              : '';
+
+            // Validate all strings before saving
+            const storageData = [
               ['authToken', accessToken],
-              ['refreshToken', auth.refreshToken || ''],
-              ['userData', JSON.stringify(userData)],
-            ]);
+              ['refreshToken', refreshTokenStr],
+              ['userData', userDataJson],
+            ];
+
+            // Ensure all values are strings
+            for (const [key, value] of storageData) {
+              if (typeof value !== 'string') {
+                throw new Error(`Invalid data type for ${key}: expected string, got ${typeof value}`);
+              }
+            }
+
+            // Save to AsyncStorage with error details
+            await AsyncStorage.multiSet(storageData);
             
+            console.log('Login data saved successfully to AsyncStorage');
+
             // Set token in API headers for future requests
             setAuthToken(accessToken);
             
@@ -73,12 +100,21 @@ export default function LoginScreen({ navigation }) {
               navigation.replace('Home');
             }, 300);
           } catch (error) {
-            console.error('AsyncStorage Error:', error);
+            console.error('AsyncStorage Error Details:', {
+              errorMessage: error?.message,
+              errorCode: error?.code,
+              accessToken: !!accessToken,
+              user: !!user,
+              refreshToken: !!auth.refreshToken,
+            });
             showAlert({
-              title: 'Error',
-              message: 'Failed to save login data. Please try again.',
+              title: 'Storage Error',
+              message: error?.message || 'Failed to save login data. Please try again.',
               type: 'error',
               confirmText: 'OK',
+              onConfirm: () => {
+                setIsNavigating(false);
+              },
             });
           }
         },

@@ -37,12 +37,28 @@ export default function EditprofileScreen({ navigation }) {
   // Load user profile and set auth token on screen mount
   useEffect(() => {
     initializeScreen();
-  }, []);
+  }, [dispatch, navigation]);
 
   const initializeScreen = async () => {
     try {
       // Retrieve token from AsyncStorage
-      const token = await AsyncStorage.getItem('authToken');
+      let token;
+      try {
+        token = await AsyncStorage.getItem('authToken');
+      } catch (asyncError) {
+        console.error('AsyncStorage.getItem error:', asyncError);
+        showAlert({
+          title: 'Storage Error',
+          message: 'Failed to retrieve authentication data. Please login again.',
+          type: 'error',
+          confirmText: 'OK',
+          onConfirm: () => {
+            navigation.replace('Login');
+          },
+        });
+        return;
+      }
+
       if (token) {
         // Set the token in API headers
         setAuthToken(token);
@@ -60,7 +76,18 @@ export default function EditprofileScreen({ navigation }) {
       }
 
       // Load user profile data
-      dispatch(getProfile());
+      try {
+        const result = await dispatch(getProfile()).unwrap();
+        console.log('Profile loaded successfully:', result);
+      } catch (profileError) {
+        console.error('Failed to load profile:', profileError);
+        showAlert({
+          title: 'Error',
+          message: 'Failed to load profile. Please try again.',
+          type: 'error',
+          confirmText: 'OK',
+        });
+      }
     } catch (error) {
       console.error('Error initializing screen:', error);
       showAlert({
@@ -92,13 +119,13 @@ export default function EditprofileScreen({ navigation }) {
     if (error) {
       showAlert({
         title: 'Update Failed',
-        message: error,
+        message: error || 'An error occurred while updating your profile.',
         type: 'error',
         confirmText: 'Try Again',
       });
       dispatch(clearAuthMessages());
     }
-  }, [error]);
+  }, [error, dispatch]);
 
   useEffect(() => {
     if (success) {
@@ -113,7 +140,7 @@ export default function EditprofileScreen({ navigation }) {
       });
       dispatch(clearAuthMessages());
     }
-  }, [success]);
+  }, [success, dispatch, navigation]);
 
   const handleInputChange = (name, value) => {
     setFormData({ ...formData, [name]: value });
@@ -200,7 +227,20 @@ export default function EditprofileScreen({ navigation }) {
 
     try {
       // Ensure token is set before making API request
-      const token = await AsyncStorage.getItem('authToken');
+      let token;
+      try {
+        token = await AsyncStorage.getItem('authToken');
+      } catch (asyncError) {
+        console.error('AsyncStorage.getItem error:', asyncError);
+        showAlert({
+          title: 'Storage Error',
+          message: 'Failed to retrieve authentication data.',
+          type: 'error',
+          confirmText: 'OK',
+        });
+        return;
+      }
+
       if (!token) {
         showAlert({
           title: 'Authentication Error',
@@ -233,13 +273,20 @@ export default function EditprofileScreen({ navigation }) {
         });
       }
 
-      // Dispatch update action
-      dispatch(updateProfile(updateFormData));
+      // Dispatch update action and wait for result
+      try {
+        const result = await dispatch(updateProfile(updateFormData)).unwrap();
+        console.log('Profile updated successfully:', result);
+        // Alert will be shown by the success useEffect
+      } catch (updateError) {
+        console.error('Profile update error:', updateError);
+        throw updateError;
+      }
     } catch (error) {
       console.error('Error in handleSave:', error);
       showAlert({
         title: 'Error',
-        message: 'Failed to save profile. Please try again.',
+        message: error?.message || 'Failed to save profile. Please try again.',
         type: 'error',
         confirmText: 'OK',
       });
