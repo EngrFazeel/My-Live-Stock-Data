@@ -59,12 +59,18 @@ export default function EditprofileScreen({ navigation }) {
   // ─── Error alert ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!error) return;
+    const isExpired = typeof error === 'string' && error.toLowerCase().includes('session expired');
     showAlert({
-      title:       'Update Failed',
-      message:     typeof error === 'string' ? error : 'Something went wrong. Please try again.',
+      title:       isExpired ? 'Session Expired' : 'Update Failed',
+      message:     isExpired
+        ? 'Your session has expired. Please log in again.'
+        : (typeof error === 'string' ? error : 'Something went wrong. Please try again.'),
       type:        'error',
       confirmText: 'OK',
-      onConfirm:   () => dispatch(clearAuthMessages()),
+      onConfirm:   () => {
+        dispatch(clearAuthMessages());
+        if (isExpired) navigation.replace('Login');
+      },
     });
   }, [error]);
 

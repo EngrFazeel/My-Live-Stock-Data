@@ -77,8 +77,12 @@ export const getProfile = createAsyncThunk(
 
 export const updateProfile = createAsyncThunk(
   'auth/updateProfile',
-  async (formData, { rejectWithValue }) => {
+  async (formData, { rejectWithValue, getState }) => {
     try {
+      // Re-assert token from Redux state right before the request so
+      // hot-reload or elapsed time cannot silently lose the Axios header.
+      const { accessToken } = getState().auth;
+      if (accessToken) setAuthToken(accessToken);
       const res = await ApiService.patch(ENDPOINTS.UPDATE_PROFILE, formData);
       return res.data;
     } catch (err) {
@@ -208,10 +212,11 @@ const authSlice = createSlice({
       .addCase(updateProfile.pending,   pending)
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.user    = action.payload;
+        // API returns { message: "Profile updated.", user: {...} }
+        const userData = action.payload.user || action.payload;
+        state.user    = userData;
         state.success = 'Profile updated successfully!';
-        // Keep userData in storage in sync
-        AsyncStorage.setItem('userData', JSON.stringify(action.payload)).catch(() => {});
+        AsyncStorage.setItem('userData', JSON.stringify(userData)).catch(() => {});
       })
       .addCase(updateProfile.rejected, rejected)
 
