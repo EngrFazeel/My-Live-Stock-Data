@@ -6,19 +6,27 @@ const ApiService = axios.create({
   baseURL: BASE_URL,
   timeout: 15000,
   headers: {
-    'Content-Type': 'application/json',
-    Accept:         'application/json',
+    Accept: 'application/json',
   },
 });
 
-// ─── Token helpers ────────────────────────────────────────────────────────────
+// ─── Token store (module-level, survives hot-reload) ─────────────────────────
+let _token = null;
+
 export const setAuthToken = (token) => {
-  if (token) {
-    ApiService.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  } else {
-    delete ApiService.defaults.headers.common['Authorization'];
-  }
+  _token = token || null;
 };
+
+// ─── Request interceptor — injects Authorization on every request ─────────────
+// Using a request interceptor (not defaults.headers.common) because Axios 1.x
+// does not reliably merge common headers into FormData / multipart requests.
+ApiService.interceptors.request.use((config) => {
+  if (_token) {
+    config.headers = config.headers ?? {};
+    config.headers['Authorization'] = `Bearer ${_token}`;
+  }
+  return config;
+});
 
 // ─── Store injection (set from store.js to avoid circular deps) ───────────────
 let _store = null;

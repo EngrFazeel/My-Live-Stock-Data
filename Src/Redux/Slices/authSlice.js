@@ -1,12 +1,26 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ApiService, { setAuthToken } from '../../Services/ApiService';
-import { ENDPOINTS } from '../../Config/BaseUrl';
+import { BASE_URL, ENDPOINTS } from '../../Config/BaseUrl';
+
+// Returns true if the JWT is expired (or cannot be parsed)
+const isTokenExpired = (token) => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64    = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload   = JSON.parse(atob(base64));
+    return (Date.now() / 1000) > (payload.exp - 30); // 30-second safety buffer
+  } catch (_) {
+    return true; // unparseable → treat as expired
+  }
+};
 
 // ─── Async Thunks ─────────────────────────────────────────────────────────────
 
 // Restores tokens + user from AsyncStorage on every app start.
-// Called once in App.js before navigation renders.
+// If the stored access token is expired it proactively refreshes it so every
+// subsequent request goes out with a valid token — no "session expired" surprises.
 export const restoreAuth = createAsyncThunk(
   'auth/restore',
   async () => {
@@ -16,20 +30,45 @@ export const restoreAuth = createAsyncThunk(
         'refreshToken',
         'userData',
       ]);
-      const accessToken  = results[0][1];
-      const refreshToken = results[1][1];
+      let accessToken    = results[0][1];
+      let refreshToken   = results[1][1] || null;
       const userDataStr  = results[2][1];
 
-      if (!accessToken) return null; // Never logged in
+      // Nothing stored — first install or after logout
+      if (!accessToken && !refreshToken) return null;
 
-      setAuthToken(accessToken); // Re-hydrate Axios headers
+      // If the access token is missing or expired, try a silent refresh now
+      if (!accessToken || isTokenExpired(accessToken)) {
+        if (!refreshToken) return null; // No way to recover — force login
+
+        try {
+          const res    = await axios.post(
+            `${BASE_URL}${ENDPOINTS.REFRESH_TOKEN}`,
+            { refresh: refreshToken },
+          );
+          accessToken  = res.data.access;
+          refreshToken = res.data.refresh || refreshToken; // keep old if not rotated
+
+          // Persist the fresh tokens immediately
+          await AsyncStorage.multiSet([
+            ['authToken',    accessToken],
+            ['refreshToken', refreshToken],
+          ]);
+        } catch (_) {
+          // Refresh token itself is expired / blacklisted — clear everything
+          await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userData']).catch(() => {});
+          return null;
+        }
+      }
+
+      setAuthToken(accessToken);
       return {
         accessToken,
-        refreshToken: refreshToken || null,
+        refreshToken,
         user: userDataStr ? JSON.parse(userDataStr) : null,
       };
     } catch (_) {
-      return null; // AsyncStorage unavailable — fail silently
+      return null;
     }
   }
 );
