@@ -18,8 +18,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { color } from '../../Color';
 import { getProfile, updateProfile, clearAuthMessages } from '../../Redux/Slices/authSlice';
 import { showAlert } from '../../Utils/SweetAlert';
-import { IMAGE_BASE_URL } from '../../Config/BaseUrl';
 import { setAuthToken } from '../../Services/ApiService';
+import { resolveImageUrl } from '../../Utils/imageHelper';
 
 // Lazy-import image picker to avoid crash when native module is null
 let launchImageLibrary = null;
@@ -220,7 +220,7 @@ export default function EditprofileScreen({ navigation }) {
   // ─── Avatar source ────────────────────────────────────────────────────────
   const avatarSource = () => {
     if (pickedImage)       return { uri: pickedImage.uri };
-    if (user?.profile_image) return { uri: `${IMAGE_BASE_URL}${user.profile_image}` };
+    if (user?.profile_image) return { uri: resolveImageUrl(user.profile_image) };
     return null;
   };
   const avatar = avatarSource();

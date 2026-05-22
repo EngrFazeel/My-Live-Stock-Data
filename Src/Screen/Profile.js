@@ -17,7 +17,7 @@ import { color } from '../Color';
 import { getProfile, clearAuthMessages } from '../Redux/Slices/authSlice';
 import { showAlert } from '../Utils/SweetAlert';
 import { setAuthToken } from '../Services/ApiService';
-import { IMAGE_BASE_URL } from '../Config/BaseUrl';
+import { resolveImageUrl } from '../Utils/imageHelper';
 
 export default function ProfileScreen({ navigation }) {
   const dispatch = useDispatch();
@@ -81,8 +81,9 @@ export default function ProfileScreen({ navigation }) {
   }
 
   // ─── Avatar source ────────────────────────────────────────────────────────
-  const avatarSource = user?.profile_image
-    ? { uri: `${IMAGE_BASE_URL}${user.profile_image}` }
+  const resolvedImage = resolveImageUrl(user?.profile_image);
+  const avatarSource = resolvedImage
+    ? { uri: resolvedImage }
     : require('../Assets/Profile.png');
 
   return (

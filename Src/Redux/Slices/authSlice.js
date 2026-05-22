@@ -1,8 +1,38 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import ApiService, { setAuthToken, multipartHeaders } from '../../Services/ApiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import ApiService, { setAuthToken } from '../../Services/ApiService';
 import { ENDPOINTS } from '../../Config/BaseUrl';
 
 // ─── Async Thunks ─────────────────────────────────────────────────────────────
+
+// Restores tokens + user from AsyncStorage on every app start.
+// Called once in App.js before navigation renders.
+export const restoreAuth = createAsyncThunk(
+  'auth/restore',
+  async () => {
+    try {
+      const results = await AsyncStorage.multiGet([
+        'authToken',
+        'refreshToken',
+        'userData',
+      ]);
+      const accessToken  = results[0][1];
+      const refreshToken = results[1][1];
+      const userDataStr  = results[2][1];
+
+      if (!accessToken) return null; // Never logged in
+
+      setAuthToken(accessToken); // Re-hydrate Axios headers
+      return {
+        accessToken,
+        refreshToken: refreshToken || null,
+        user: userDataStr ? JSON.parse(userDataStr) : null,
+      };
+    } catch (_) {
+      return null; // AsyncStorage unavailable — fail silently
+    }
+  }
+);
 
 export const loginUser = createAsyncThunk(
   'auth/login',
@@ -10,7 +40,7 @@ export const loginUser = createAsyncThunk(
     try {
       const res = await ApiService.post(ENDPOINTS.LOGIN, { cnic_no, password });
       setAuthToken(res.data.access);
-      return res.data; // expects { user: {...}, access: '...', refresh: '...' }
+      return res.data; // { user, access, refresh }
     } catch (err) {
       return rejectWithValue(err);
     }
@@ -49,9 +79,6 @@ export const updateProfile = createAsyncThunk(
   'auth/updateProfile',
   async (formData, { rejectWithValue }) => {
     try {
-      // Do NOT set Content-Type manually for FormData — the native XHR sets it
-      // automatically with the correct multipart boundary. Overriding it strips
-      // the boundary and causes server-side parse failures.
       const res = await ApiService.patch(ENDPOINTS.UPDATE_PROFILE, formData);
       return res.data;
     } catch (err) {
@@ -77,20 +104,17 @@ export const changePassword = createAsyncThunk(
 );
 
 export const logoutUser = createAsyncThunk(
-  'auth/logout',
-  async (_, { getState, rejectWithValue }) => {
+  'auth/logoutUser',
+  async (_, { getState }) => {
     try {
-      const state = getState();
-      const refreshToken = state.auth.refreshToken;
+      const { refreshToken } = getState().auth;
       if (refreshToken) {
         await ApiService.post(ENDPOINTS.LOGOUT, { refresh: refreshToken });
       }
-      setAuthToken(null);
-      return null;
-    } catch (err) {
-      setAuthToken(null);
-      return null;
-    }
+    } catch (_) {}
+    setAuthToken(null);
+    await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userData']).catch(() => {});
+    return null;
   }
 );
 
@@ -99,19 +123,23 @@ export const logoutUser = createAsyncThunk(
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user:          null,
-    accessToken:   null,
-    refreshToken:  null,
-    loading:       false,
-    error:         null,
-    success:       null,
+    user:         null,
+    accessToken:  null,
+    refreshToken: null,
+    loading:      false,
+    restored:     false, // true once restoreAuth has finished
+    error:        null,
+    success:      null,
   },
   reducers: {
     logout: (state) => {
       state.user         = null;
       state.accessToken  = null;
       state.refreshToken = null;
+      state.restored     = true;
       setAuthToken(null);
+      // Fire-and-forget AsyncStorage clear
+      AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userData']).catch(() => {});
     },
     clearAuthMessages: (state) => {
       state.error   = null;
@@ -119,11 +147,15 @@ const authSlice = createSlice({
     },
     // Called by the Axios interceptor after a silent token refresh
     updateAccessToken: (state, action) => {
-      state.accessToken  = action.payload.access;
-      // Keep the rotated refresh token if the server returned one
+      state.accessToken = action.payload.access;
       if (action.payload.refresh) {
         state.refreshToken = action.payload.refresh;
       }
+      // Persist new tokens to storage (fire-and-forget)
+      AsyncStorage.multiSet([
+        ['authToken',    action.payload.access],
+        ['refreshToken', action.payload.refresh || state.refreshToken || ''],
+      ]).catch(() => {});
     },
   },
   extraReducers: (builder) => {
@@ -131,65 +163,78 @@ const authSlice = createSlice({
     const rejected = (state, action) => { state.loading = false; state.error = action.payload; };
 
     builder
-      // Login
+      // ── Restore (app start) ───────────────────────────────────────────────
+      .addCase(restoreAuth.fulfilled, (state, action) => {
+        state.restored = true;
+        if (action.payload) {
+          state.accessToken  = action.payload.accessToken;
+          state.refreshToken = action.payload.refreshToken;
+          state.user         = action.payload.user;
+        }
+      })
+      .addCase(restoreAuth.rejected, (state) => { state.restored = true; })
+
+      // ── Login ─────────────────────────────────────────────────────────────
       .addCase(loginUser.pending,   pending)
       .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading       = false;
-        state.user          = action.payload.user || action.payload;
-        state.accessToken   = action.payload.access;
-        state.refreshToken  = action.payload.refresh;
-        state.success       = 'Login successful!';
+        state.loading      = false;
+        state.user         = action.payload.user || action.payload;
+        state.accessToken  = action.payload.access;
+        state.refreshToken = action.payload.refresh;
+        state.success      = 'Login successful!';
       })
-      .addCase(loginUser.rejected,  rejected)
+      .addCase(loginUser.rejected, rejected)
 
-      // Signup
+      // ── Signup ────────────────────────────────────────────────────────────
       .addCase(signupUser.pending,   pending)
       .addCase(signupUser.fulfilled, (state, action) => {
-        state.loading       = false;
-        state.user          = action.payload.user || action.payload;
-        state.accessToken   = action.payload.access;
-        state.refreshToken  = action.payload.refresh;
-        state.success       = 'Account created successfully!';
+        state.loading      = false;
+        state.user         = action.payload.user || action.payload;
+        state.accessToken  = action.payload.access;
+        state.refreshToken = action.payload.refresh;
+        state.success      = 'Account created successfully!';
       })
-      .addCase(signupUser.rejected,  rejected)
+      .addCase(signupUser.rejected, rejected)
 
-      // Get Profile
+      // ── Get Profile ───────────────────────────────────────────────────────
       .addCase(getProfile.pending,   pending)
       .addCase(getProfile.fulfilled, (state, action) => {
         state.loading = false;
         state.user    = action.payload;
       })
-      .addCase(getProfile.rejected,  rejected)
+      .addCase(getProfile.rejected, rejected)
 
-      // Update Profile
+      // ── Update Profile ────────────────────────────────────────────────────
       .addCase(updateProfile.pending,   pending)
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.loading = false;
         state.user    = action.payload;
         state.success = 'Profile updated successfully!';
+        // Keep userData in storage in sync
+        AsyncStorage.setItem('userData', JSON.stringify(action.payload)).catch(() => {});
       })
-      .addCase(updateProfile.rejected,  rejected)
+      .addCase(updateProfile.rejected, rejected)
 
-      // Change Password
+      // ── Change Password ───────────────────────────────────────────────────
       .addCase(changePassword.pending,   pending)
-      .addCase(changePassword.fulfilled, (state, action) => {
+      .addCase(changePassword.fulfilled, (state) => {
         state.loading = false;
         state.success = 'Password changed successfully!';
       })
-      .addCase(changePassword.rejected,  rejected)
+      .addCase(changePassword.rejected, rejected)
 
-      // Logout
+      // ── Logout ────────────────────────────────────────────────────────────
       .addCase(logoutUser.pending,   pending)
-      .addCase(logoutUser.fulfilled, (state, action) => {
-        state.loading       = false;
-        state.user          = null;
-        state.accessToken   = null;
-        state.refreshToken  = null;
-        state.success       = 'Logged out successfully!';
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.loading      = false;
+        state.user         = null;
+        state.accessToken  = null;
+        state.refreshToken = null;
+        state.success      = 'Logged out successfully!';
       })
-      .addCase(logoutUser.rejected,  rejected);
+      .addCase(logoutUser.rejected, rejected);
   },
 });
 
-export const { logout, clearAuthMessages } = authSlice.actions;
+export const { logout, clearAuthMessages, updateAccessToken } = authSlice.actions;
 export default authSlice.reducer;
