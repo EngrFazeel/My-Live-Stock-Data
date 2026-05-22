@@ -35,7 +35,6 @@ export default function EditprofileScreen({ navigation }) {
   const [form, setForm] = useState({
     full_name:    '',
     phone_number: '',
-    cnic_no:      '',
     address:      '',
   });
   const [pickedImage,  setPickedImage]  = useState(null);
@@ -53,7 +52,6 @@ export default function EditprofileScreen({ navigation }) {
     setForm({
       full_name:    user.full_name    || '',
       phone_number: user.phone_number || '',
-      cnic_no:      user.cnic_no      || '',
       address:      user.address      || '',
     });
   }, [user]);
@@ -189,10 +187,6 @@ export default function EditprofileScreen({ navigation }) {
       showAlert({ title: 'Missing Field', message: 'Please enter your phone number.', type: 'warning' });
       return;
     }
-    if (!form.cnic_no.trim()) {
-      showAlert({ title: 'Missing Field', message: 'Please enter your CNIC number.', type: 'warning' });
-      return;
-    }
 
     // Re-assert token into Axios headers (handles hot-reload header loss).
     // If the token is expired the interceptor in ApiService will silently
@@ -202,7 +196,6 @@ export default function EditprofileScreen({ navigation }) {
     const payload = new FormData();
     payload.append('full_name',    form.full_name.trim());
     payload.append('phone_number', form.phone_number.trim());
-    payload.append('cnic_no',      form.cnic_no.trim());
     payload.append('address',      form.address.trim());
 
     if (pickedImage) {
@@ -294,17 +287,11 @@ export default function EditprofileScreen({ navigation }) {
           </View>
 
           <Text style={styles.label}>CNIC Number</Text>
-          <View style={styles.inputRow}>
-            <TextInput
-              style={styles.input}
-              placeholder="CNIC Number"
-              placeholderTextColor="#aaa"
-              keyboardType="numeric"
-              maxLength={13}
-              value={form.cnic_no}
-              onChangeText={(v) => setForm({ ...form, cnic_no: v })}
-            />
-            <Icon name="credit-card" size={22} color={color.Secondry} />
+          <View style={[styles.inputRow, styles.readOnlyRow]}>
+            <Text style={[styles.input, styles.readOnlyText]}>
+              {user?.cnic_no || '—'}
+            </Text>
+            <Icon name="credit-card" size={22} color="#bbb" />
           </View>
 
           <Text style={styles.label}>Address</Text>
@@ -382,7 +369,9 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: color.Secondry, borderRadius: 10,
     paddingHorizontal: 12, backgroundColor: '#fff', marginBottom: 14,
   },
-  input: { flex: 1, fontSize: 15, color: '#333', paddingVertical: 10 },
+  input:        { flex: 1, fontSize: 15, color: '#333', paddingVertical: 10 },
+  readOnlyRow:  { borderColor: '#ddd', backgroundColor: '#f9f9f9' },
+  readOnlyText: { color: '#999' },
 
   btnRow: {
     flexDirection: 'row', justifyContent: 'space-between',
