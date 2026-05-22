@@ -194,22 +194,30 @@ export default function EditprofileScreen({ navigation }) {
       return;
     }
 
-    // Re-assert token into Axios headers (handles hot-reload header loss).
-    // If the token is expired the interceptor in ApiService will silently
-    // refresh it using the refresh token before this request fires.
     if (accessToken) setAuthToken(accessToken);
 
-    const payload = new FormData();
-    payload.append('full_name',    form.full_name.trim());
-    payload.append('phone_number', form.phone_number.trim());
-    payload.append('address',      form.address.trim());
+    let payload;
 
     if (pickedImage) {
+      // Photo selected → must use FormData so the binary file travels correctly
+      payload = new FormData();
+      payload.append('full_name',    form.full_name.trim());
+      payload.append('phone_number', form.phone_number.trim());
+      payload.append('address',      form.address.trim());
       payload.append('profile_image', {
         uri:  pickedImage.uri,
         type: pickedImage.type || 'image/jpeg',
         name: pickedImage.fileName || 'profile.jpg',
       });
+    } else {
+      // No photo → send plain JSON.
+      // PATCH + FormData on Android via Axios fails with "Network Error";
+      // JSON avoids that entirely and DRF accepts both formats.
+      payload = {
+        full_name:    form.full_name.trim(),
+        phone_number: form.phone_number.trim(),
+        address:      form.address.trim(),
+      };
     }
 
     successHandled.current = false;
