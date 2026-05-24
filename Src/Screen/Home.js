@@ -40,7 +40,7 @@ export default function HomeScreen({navigation}) {
   );
   const {user} = useSelector(s => s.auth);
 
-  const animation = useRef(new Animated.Value(-width * 0.6)).current;
+  const animation = useRef(new Animated.Value(-width * 0.72)).current;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -71,7 +71,7 @@ export default function HomeScreen({navigation}) {
   // ─── Drawer helpers ───────────────────────────────────────────────────────
   const toggleDrawer = () => {
     Animated.timing(animation, {
-      toValue: drawerOpen ? -width * 0.6 : 0,
+      toValue: drawerOpen ? -width * 0.72 : 0,
       duration: 300,
       useNativeDriver: false,
     }).start();
@@ -202,16 +202,16 @@ export default function HomeScreen({navigation}) {
             <TouchableOpacity
               style={styles.cardEditBtn}
               onPress={() => handleEdit(item)}>
-              <MaterialIcons name="edit" size={13} color="#fff" />
-              <Text style={styles.cardBtnText}>Edit</Text>
+              <MaterialIcons name="edit" size={13} color={color.Secondry} />
+              <Text style={[styles.cardBtnText, {color: color.Secondry}]}>
+                Edit
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.cardDeleteBtn}
               onPress={() => handleDelete(item)}>
-              <MaterialIcons name="delete" size={13} color={color.Secondry} />
-              <Text style={[styles.cardBtnText, {color: color.Secondry}]}>
-                Delete
-              </Text>
+              <MaterialIcons name="delete" size={13} color="#fff" />
+              <Text style={styles.cardBtnText}>Delete</Text>
             </TouchableOpacity>
           </View>
 
@@ -505,8 +505,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 30,
-    borderWidth: 1.5,
-    borderColor: '#fff',
+    backgroundColor: '#fff',
     borderRadius: 20,
     gap: 4,
   },
@@ -516,7 +515,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     height: 30,
-    backgroundColor: '#fff',
+    backgroundColor: '#e53935',
     borderRadius: 20,
     gap: 4,
   },
