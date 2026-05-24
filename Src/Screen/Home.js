@@ -347,7 +347,14 @@ export default function HomeScreen({navigation}) {
         {/* Drawer header with user info */}
         <View style={styles.drawerHeader}>
           <View style={styles.drawerAvatar}>
-            <MaterialIcons name="person" size={32} color="#fff" />
+            {user?.profile_image ? (
+              <Image
+                source={{uri: resolveImageUrl(user.profile_image)}}
+                style={styles.drawerAvatarImg}
+              />
+            ) : (
+              <MaterialIcons name="person" size={32} color="#fff" />
+            )}
           </View>
           <Text style={styles.drawerUsername} numberOfLines={1}>
             {user?.full_name || 'User'}
@@ -588,6 +595,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
+    overflow: 'hidden',
+  },
+  drawerAvatarImg: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   drawerUsername: {color: '#fff', fontSize: 16, fontWeight: 'bold'},
   drawerEmail: {color: 'rgba(255,255,255,0.8)', fontSize: 13, marginTop: 2},
