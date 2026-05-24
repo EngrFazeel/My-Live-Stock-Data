@@ -22,6 +22,9 @@ export const ENDPOINTS = {
   UPDATE_ANIMAL: id => `animals/${id}/`,
   DELETE_ANIMAL: id => `animals/${id}/`,
 
+  // Nose Scan
+  IDENTIFY_NOSE_SCAN: 'animals/nose-scans/identify/',
+
   // Sale
   GET_SALES: 'sales/',
   ADD_SALE: 'sales/store/',
