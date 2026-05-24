@@ -35,18 +35,22 @@ const {width} = Dimensions.get('window');
 
 export default function HomeScreen({navigation}) {
   const dispatch = useDispatch();
-  const {list: animals, loading, error} = useSelector(s => s.animals);
+  const {list: animals, loading, error, page, totalPages} = useSelector(
+    s => s.animals,
+  );
   const {user} = useSelector(s => s.auth);
 
   const animation = useRef(new Animated.Value(-width * 0.6)).current;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // ─── Fetch animals on first mount and every time the screen gets focus ────
   useEffect(() => {
     const unsub = navigation.addListener('focus', () => {
-      dispatch(fetchAnimals());
+      setCurrentPage(1);
+      dispatch(fetchAnimals(1));
     });
-    dispatch(fetchAnimals());
+    dispatch(fetchAnimals(1));
     return unsub;
   }, [navigation, dispatch]);
 
@@ -91,6 +95,26 @@ export default function HomeScreen({navigation}) {
     });
   };
 
+  // ─── Pagination helpers ───────────────────────────────────────────────────
+  const goToPage = pg => {
+    setCurrentPage(pg);
+    dispatch(fetchAnimals(pg));
+  };
+
+  const getPageNumbers = () => {
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    const pages = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
   // ─── Delete with confirmation ─────────────────────────────────────────────
   const handleDelete = item => {
     showAlert({
@@ -116,78 +140,130 @@ export default function HomeScreen({navigation}) {
 
     return (
       <View style={styles.card}>
-        {/* Left: animal photo */}
-        <View style={styles.cardImgWrap}>
-          {imgSrc ? (
-            <Image source={imgSrc} style={styles.cardImg} />
-          ) : (
-            <View style={styles.cardImgPlaceholder}>
-              <FontAwesome6 name="cow" size={30} color="#fff" />
-            </View>
-          )}
+
+        {/* Left — circular photo / icon */}
+        <View style={styles.cardLeft}>
+          <View style={styles.iconCircle}>
+            {imgSrc ? (
+              <Image source={imgSrc} style={styles.circleImg} />
+            ) : (
+              <FontAwesome6 name="cow" size={28} color="#fff" />
+            )}
+          </View>
         </View>
 
-        {/* Right: details */}
-        <View style={styles.cardBody}>
-          <Text style={styles.cardName} numberOfLines={1}>
-            {item.animal_name}
-          </Text>
+        {/* Right — pill-box info rows */}
+        <View style={styles.cardRight}>
 
-          <View style={styles.cardTagRow}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>
+          {/* Row 1: animal name | registration date */}
+          <View style={styles.infoRow}>
+            <View style={styles.boxLarge}>
+              <Text style={styles.boxText} numberOfLines={1}>
+                {item.animal_name}
+              </Text>
+            </View>
+            <View style={styles.boxSmall}>
+              <Text style={styles.boxText} numberOfLines={1}>
+                {item.registration_date}
+              </Text>
+            </View>
+          </View>
+
+          {/* Row 2: owner name | category */}
+          <View style={styles.infoRow}>
+            <View style={styles.boxLarge}>
+              <Text style={styles.boxText} numberOfLines={1}>
+                {item.owner_name || '—'}
+              </Text>
+            </View>
+            <View style={styles.boxSmall}>
+              <Text style={styles.boxText} numberOfLines={1}>
                 {item.category_display || item.category}
               </Text>
             </View>
-            <View
-              style={[
-                styles.tag,
-                {
-                  backgroundColor:
-                    item.gender === 'male' ? '#1565c0' : '#ad1457',
-                },
-              ]}>
-              <Text style={styles.tagText}>
+          </View>
+
+          {/* Row 3: gender | age */}
+          <View style={styles.infoRow}>
+            <View style={styles.boxLarge}>
+              <Text style={styles.boxText} numberOfLines={1}>
                 {item.gender_display || item.gender}
+              </Text>
+            </View>
+            <View style={styles.boxSmall}>
+              <Text style={styles.boxText} numberOfLines={1}>
+                {item.age} months
               </Text>
             </View>
           </View>
 
-          <Text style={styles.cardDetail}>
-            <Text style={styles.cardDetailLabel}>Breed: </Text>
-            {item.breed}
-          </Text>
-          <Text style={styles.cardDetail}>
-            <Text style={styles.cardDetailLabel}>Age: </Text>
-            {item.age} months
-          </Text>
-          <Text style={styles.cardDetail}>
-            <Text style={styles.cardDetailLabel}>Date: </Text>
-            {item.registration_date}
-          </Text>
-          {item.owner_name ? (
-            <Text style={styles.cardDetail} numberOfLines={1}>
-              <Text style={styles.cardDetailLabel}>Owner: </Text>
-              {item.owner_name}
-            </Text>
-          ) : null}
-
-          {/* Edit / Delete buttons */}
-          <View style={styles.cardActions}>
+          {/* Edit / Delete */}
+          <View style={styles.cardBtnRow}>
             <TouchableOpacity
-              style={styles.editBtn}
+              style={styles.cardEditBtn}
               onPress={() => handleEdit(item)}>
-              <MaterialIcons name="edit" size={15} color="#fff" />
-              <Text style={styles.actionBtnText}>Edit</Text>
+              <MaterialIcons name="edit" size={13} color="#fff" />
+              <Text style={styles.cardBtnText}>Edit</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.deleteBtn}
+              style={styles.cardDeleteBtn}
               onPress={() => handleDelete(item)}>
-              <MaterialIcons name="delete" size={15} color="#fff" />
-              <Text style={styles.actionBtnText}>Delete</Text>
+              <MaterialIcons name="delete" size={13} color={color.Secondry} />
+              <Text style={[styles.cardBtnText, {color: color.Secondry}]}>
+                Delete
+              </Text>
             </TouchableOpacity>
           </View>
+
         </View>
+      </View>
+    );
+  };
+
+  // ─── Pagination controls ──────────────────────────────────────────────────
+  const renderPagination = () => {
+    if (totalPages <= 1 || animals.length === 0) {
+      return null;
+    }
+    return (
+      <View style={styles.paginationWrap}>
+        <TouchableOpacity
+          style={[styles.pageBtn, currentPage === 1 && styles.pageBtnDisabled]}
+          disabled={currentPage === 1}
+          onPress={() => goToPage(currentPage - 1)}>
+          <MaterialIcons
+            name="chevron-left"
+            size={22}
+            color={currentPage === 1 ? '#ccc' : color.Secondry}
+          />
+        </TouchableOpacity>
+        {getPageNumbers().map(n => (
+          <TouchableOpacity
+            key={n}
+            style={[styles.pageBtn, n === currentPage && styles.pageBtnActive]}
+            onPress={() => goToPage(n)}>
+            <Text
+              style={[
+                styles.pageBtnText,
+                n === currentPage && styles.pageBtnTextActive,
+              ]}>
+              {n}
+            </Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity
+          style={[
+            styles.pageBtn,
+            currentPage === totalPages && styles.pageBtnDisabled,
+          ]}
+          disabled={currentPage === totalPages}
+          onPress={() => goToPage(currentPage + 1)}>
+          <MaterialIcons
+            name="chevron-right"
+            size={22}
+            color={currentPage === totalPages ? '#ccc' : color.Secondry}
+          />
+        </TouchableOpacity>
       </View>
     );
   };
@@ -224,7 +300,7 @@ export default function HomeScreen({navigation}) {
           <MaterialIcons name="menu" size={30} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Animals</Text>
-        <TouchableOpacity onPress={() => dispatch(fetchAnimals())}>
+        <TouchableOpacity onPress={() => goToPage(1)}>
           <Ionicons name="refresh" size={26} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -244,8 +320,9 @@ export default function HomeScreen({navigation}) {
           renderItem={renderCard}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={renderEmpty}
+          ListFooterComponent={renderPagination}
           refreshing={loading}
-          onRefresh={() => dispatch(fetchAnimals())}
+          onRefresh={() => goToPage(1)}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -369,66 +446,81 @@ const styles = StyleSheet.create({
   // ── Animal card ────────────────────────────────────────────────────────────
   card: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    marginBottom: 12,
-    overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: {width: 0, height: 2},
-  },
-  cardImgWrap: {
-    width: 100,
-    height: '100%',
-    minHeight: 150,
-  },
-  cardImg: {width: 100, height: '100%', minHeight: 150},
-  cardImgPlaceholder: {
-    width: 100,
-    minHeight: 150,
     backgroundColor: color.Secondry,
+    borderRadius: 16,
+    marginBottom: 12,
+    padding: 12,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: {width: 0, height: 3},
+    alignItems: 'center',
+  },
+  cardLeft: {
+    width: '22%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  iconCircle: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    borderWidth: 2,
+    borderColor: '#fff',
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  cardBody: {flex: 1, padding: 12},
-
-  cardName: {fontSize: 17, fontWeight: 'bold', color: '#222', marginBottom: 6},
-
-  cardTagRow: {flexDirection: 'row', gap: 6, marginBottom: 6},
-  tag: {
-    backgroundColor: color.Secondry,
+  circleImg: {width: 62, height: 62, borderRadius: 31},
+  cardRight: {flex: 1, gap: 6},
+  infoRow: {flexDirection: 'row', gap: 6},
+  boxLarge: {
+    flex: 1.8,
+    height: 32,
+    borderWidth: 1.5,
+    borderColor: '#fff',
     borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
   },
-  tagText: {color: '#fff', fontSize: 11, fontWeight: '700'},
-
-  cardDetail: {fontSize: 13, color: '#555', marginBottom: 2},
-  cardDetailLabel: {fontWeight: '700', color: '#333'},
-
-  cardActions: {flexDirection: 'row', marginTop: 10, gap: 8},
-  editBtn: {
+  boxSmall: {
+    flex: 1,
+    height: 32,
+    borderWidth: 1.5,
+    borderColor: '#fff',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  boxText: {color: '#fff', fontWeight: '700', fontSize: 11},
+  cardBtnRow: {flexDirection: 'row', gap: 6, marginTop: 2},
+  cardEditBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: color.Secondry,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 8,
+    justifyContent: 'center',
+    height: 30,
+    borderWidth: 1.5,
+    borderColor: '#fff',
+    borderRadius: 20,
     gap: 4,
   },
-  deleteBtn: {
+  cardDeleteBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e53935',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 8,
+    justifyContent: 'center',
+    height: 30,
+    backgroundColor: '#fff',
+    borderRadius: 20,
     gap: 4,
   },
-  actionBtnText: {color: '#fff', fontWeight: '700', fontSize: 13},
+  cardBtnText: {color: '#fff', fontWeight: '700', fontSize: 12},
 
   // ── Empty state ────────────────────────────────────────────────────────────
   emptyWrap: {alignItems: 'center', marginTop: 80},
@@ -497,4 +589,27 @@ const styles = StyleSheet.create({
   },
   drawerText: {marginLeft: 16, fontSize: 15, color: '#333'},
   drawerDivider: {height: 1, backgroundColor: '#eee', marginVertical: 4},
+
+  // ── Pagination ─────────────────────────────────────────────────────────────
+  paginationWrap: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 8,
+  },
+  pageBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1.5,
+    borderColor: color.Secondry,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  pageBtnActive: {backgroundColor: color.Secondry},
+  pageBtnDisabled: {borderColor: '#ddd', backgroundColor: '#f5f5f5'},
+  pageBtnText: {color: color.Secondry, fontWeight: '700', fontSize: 14},
+  pageBtnTextActive: {color: '#fff'},
 });

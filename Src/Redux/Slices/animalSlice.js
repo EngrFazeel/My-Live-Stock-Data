@@ -17,12 +17,19 @@ const multipartConfig = {headers: {'Content-Type': 'multipart/form-data'}};
 
 export const fetchAnimals = createAsyncThunk(
   'animals/fetchAll',
-  async (_, {rejectWithValue, getState}) => {
+  async (page = 1, {rejectWithValue, getState}) => {
     try {
       assertToken(getState);
-      const res = await ApiService.get(ENDPOINTS.GET_ANIMALS);
-      // Handle both paginated { results: [...] } and plain array responses
-      return Array.isArray(res.data) ? res.data : res.data.results ?? [];
+      const res = await ApiService.get(ENDPOINTS.GET_ANIMALS, {params: {page}});
+      if (Array.isArray(res.data)) {
+        return {results: res.data, page: 1, total_pages: 1, count: res.data.length};
+      }
+      return {
+        results: res.data.results ?? [],
+        page: res.data.page ?? 1,
+        total_pages: res.data.total_pages ?? 1,
+        count: res.data.count ?? 0,
+      };
     } catch (err) {
       return rejectWithValue(err);
     }
@@ -86,6 +93,9 @@ const animalSlice = createSlice({
     loading: false,
     error: null,
     success: null,
+    page: 1,
+    totalPages: 1,
+    count: 0,
   },
   reducers: {
     clearAnimalMessages: state => {
@@ -108,7 +118,10 @@ const animalSlice = createSlice({
       .addCase(fetchAnimals.pending, pending)
       .addCase(fetchAnimals.fulfilled, (state, action) => {
         state.loading = false;
-        state.list = action.payload;
+        state.list = action.payload.results;
+        state.page = action.payload.page;
+        state.totalPages = action.payload.total_pages;
+        state.count = action.payload.count;
       })
       .addCase(fetchAnimals.rejected, rejected)
 
