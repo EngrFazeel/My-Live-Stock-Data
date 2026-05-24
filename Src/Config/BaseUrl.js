@@ -25,8 +25,12 @@ export const ENDPOINTS = {
   // Nose Scan
   IDENTIFY_NOSE_SCAN: 'animals/nose-scans/identify/',
 
-  // Sale
-  GET_SALES: 'sales/',
-  ADD_SALE: 'sales/store/',
-  DELETE_SALE: id => `sales/delete/${id}/`,
+  // Ownership Transfers
+  GET_TRANSFERS:    'animals/transfers/',
+  CREATE_TRANSFER:  'animals/transfers/',
+  GET_TRANSFER:     id => `animals/transfers/${id}/`,
+  DELETE_TRANSFER:  id => `animals/transfers/${id}/`,
+
+  // Admin
+  GET_ALL_USERS: 'auth/admin/users/',
 };

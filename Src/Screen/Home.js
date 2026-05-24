@@ -186,11 +186,11 @@ export default function HomeScreen({navigation}) {
 
           {/* Row 3: gender | age */}
           <View style={styles.infoRow}>
-            <View style={styles.boxLarge}>
+            {/* <View style={styles.boxLarge}>
               <Text style={styles.boxText} numberOfLines={1}>
                 {item.gender_display || item.gender}
               </Text>
-            </View>
+            </View> */}
             <View style={styles.boxSmall}>
               <Text style={styles.boxText} numberOfLines={1}>
                 {item.age} months
@@ -381,6 +381,13 @@ export default function HomeScreen({navigation}) {
           onPress={() => navigateTo('Sale')}>
           <MaterialIcons name="sell" size={22} color={color.Secondry} />
           <Text style={styles.drawerText}>Sale Animal</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.drawerItem}
+          onPress={() => navigateTo('MyTransfers')}>
+          <MaterialIcons name="swap-horiz" size={22} color={color.Secondry} />
+          <Text style={styles.drawerText}>My Transfers</Text>
         </TouchableOpacity>
 
         <TouchableOpacity

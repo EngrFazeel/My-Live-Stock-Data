@@ -28,12 +28,12 @@ import Setting      from './Src/Screen/Guest/Setting';
 import Result       from './Src/Screen/Result';
 import Home         from './Src/Screen/Home';
 import Profile      from './Src/Screen/Profile';
-import Settings     from './Src/Screen/Settings';
 import Chat         from './Src/Screen/Chat';
 import Addanimal    from './Src/Screen/Addanimal';
 import Scansave     from './Src/Screen/Scansave';
 
 import Sale           from './Src/Screen/Drawar/Sale';
+import MyTransfers    from './Src/Screen/Drawar/MyTransfers';
 import AppInfo        from './Src/Screen/Drawar/AppInfo';
 import Contactus      from './Src/Screen/Drawar/Contactus';
 import Editprofile    from './Src/Screen/Drawar/Editprofile';
@@ -116,6 +116,7 @@ function AppContent() {
 
         {/* Drawer screens */}
         <Stack.Screen name="Sale"          component={Sale} />
+        <Stack.Screen name="MyTransfers"   component={MyTransfers} />
         <Stack.Screen name="AppInfo"       component={AppInfo} />
         <Stack.Screen name="Contactus"     component={Contactus} />
         <Stack.Screen name="Editprofile"   component={Editprofile} />

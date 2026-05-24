@@ -157,19 +157,19 @@ export default function ResultScreen({navigation, route}) {
         {/* Scan analysis card */}
         <SectionTitle title="Scan Analysis" />
         <View style={styles.card}>
-          <InfoRow
+          {/* <InfoRow
             icon="stars"
             label="Match Score"
             value={`${scorePercent}%`}
             highlight
-          />
+          /> */}
           <Divider />
           <InfoRow
             icon="fingerprint"
             label="Predicted ID"
             value={predictedId}
           />
-          {matched.best_scan?.predicted_cattle_id && (
+          {/* {matched.best_scan?.predicted_cattle_id && (
             <>
               <Divider />
               <InfoRow
@@ -178,7 +178,7 @@ export default function ResultScreen({navigation, route}) {
                 value={matched.best_scan.predicted_cattle_id}
               />
             </>
-          )}
+          )} */}
           <Divider />
           <InfoRow icon="event" label="Scan Date" value={scanDate} />
         </View>

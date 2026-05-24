@@ -1,14 +1,16 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer   from './Slices/authSlice';
-import animalReducer from './Slices/animalSlice';
-import scanReducer   from './Slices/scanSlice';
-import { setStore }  from '../Services/ApiService';
+import authReducer     from './Slices/authSlice';
+import animalReducer   from './Slices/animalSlice';
+import scanReducer     from './Slices/scanSlice';
+import transferReducer from './Slices/transferSlice';
+import { setStore }    from '../Services/ApiService';
 
 const store = configureStore({
   reducer: {
-    auth:    authReducer,
-    animals: animalReducer,
-    scan:    scanReducer,
+    auth:     authReducer,
+    animals:  animalReducer,
+    scan:     scanReducer,
+    transfer: transferReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
