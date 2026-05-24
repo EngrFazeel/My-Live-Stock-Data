@@ -1,276 +1,268 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  SafeAreaView,
   StatusBar,
   ActivityIndicator,
   Image,
   ScrollView,
   Platform,
   PermissionsAndroid,
+  Modal,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import {useDispatch, useSelector} from 'react-redux';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 
-import { color } from '../../Color';
-import { getProfile, updateProfile, clearAuthMessages } from '../../Redux/Slices/authSlice';
-import { showAlert } from '../../Utils/SweetAlert';
-import { setAuthToken } from '../../Services/ApiService';
-import { resolveImageUrl } from '../../Utils/imageHelper';
+import {color} from '../../Color';
+import {
+  getProfile,
+  updateProfile,
+  clearAuthMessages,
+} from '../../Redux/Slices/authSlice';
+import {showAlert} from '../../Utils/SweetAlert';
+import {setAuthToken} from '../../Services/ApiService';
+import {resolveImageUrl} from '../../Utils/imageHelper';
 
-// Lazy-import image picker to avoid crash when native module is null
-let launchImageLibrary = null;
-try {
-  launchImageLibrary = require('react-native-image-picker').launchImageLibrary;
-} catch (_) {}
-
-export default function EditprofileScreen({ navigation }) {
+export default function EditprofileScreen({navigation}) {
   const dispatch = useDispatch();
-  const { user, loading, error, success, accessToken } =
-    useSelector((s) => s.auth);
+  const {user, loading, error, success, accessToken} = useSelector(
+    s => s.auth,
+  );
 
   const [form, setForm] = useState({
-    full_name:    '',
+    full_name: '',
     phone_number: '',
-    address:      '',
+    address: '',
   });
-  const [pickedImage,  setPickedImage]  = useState(null);
-  const successHandled = useRef(false);
-  const errorHandled   = useRef(false);
+  const [pickedImage, setPickedImage] = useState(null);
+  const [imgModalOpen, setImgModalOpen] = useState(false);
 
-  // ─── On mount: clear stale messages, re-assert token, load profile ───────
+  // ── On mount: clear stale messages, assert token, load profile ────────────
   useEffect(() => {
-    dispatch(clearAuthMessages());          // prevent stale error/success from previous screen
-    if (accessToken) setAuthToken(accessToken);
-    if (!user)       dispatch(getProfile());
+    dispatch(clearAuthMessages());
+    if (accessToken) {
+      setAuthToken(accessToken);
+    }
+    if (!user) {
+      dispatch(getProfile());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ─── Sync form when Redux user data arrives ───────────────────────────────
+  // ── Populate form when user data arrives ───────────────────────────────────
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      return;
+    }
     setForm({
-      full_name:    user.full_name    || '',
+      full_name: user.full_name || '',
       phone_number: user.phone_number || '',
-      address:      user.address      || '',
+      address: user.address || '',
     });
   }, [user]);
 
-  // ─── Error alert ──────────────────────────────────────────────────────────
+  // ── Error ─────────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!error || errorHandled.current) return;
-    errorHandled.current = true;
-    const isExpired = typeof error === 'string' && error.toLowerCase().includes('session expired');
+    if (!error) {
+      return;
+    }
+    const isExpired =
+      typeof error === 'string' &&
+      error.toLowerCase().includes('session expired');
     showAlert({
-      title:       isExpired ? 'Session Expired' : 'Update Failed',
-      message:     isExpired
+      title: isExpired ? 'Session Expired' : 'Update Failed',
+      message: isExpired
         ? 'Your session has expired. Please log in again.'
-        : (typeof error === 'string' ? error : 'Something went wrong. Please try again.'),
-      type:        'error',
+        : typeof error === 'string'
+        ? error
+        : 'Something went wrong. Please try again.',
+      type: 'error',
       confirmText: 'OK',
-      onConfirm:   () => {
+      onConfirm: () => {
         dispatch(clearAuthMessages());
-        errorHandled.current = false;
-        if (isExpired) navigation.replace('Login');
+        if (isExpired) {
+          navigation.replace('Login');
+        }
       },
     });
-  }, [error]);
+  }, [error, dispatch, navigation]);
 
-  // ─── Success alert ────────────────────────────────────────────────────────
+  // ── Success ───────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!success || successHandled.current) return;
-    successHandled.current = true;
+    if (!success) {
+      return;
+    }
     showAlert({
-      title:       'Profile Updated!',
-      message:     success,
-      type:        'success',
+      title: 'Profile Updated!',
+      message: success,
+      type: 'success',
       confirmText: 'OK',
-      onConfirm:   () => {
+      onConfirm: () => {
         dispatch(clearAuthMessages());
-        successHandled.current = false;
         navigation.goBack();
       },
     });
-  }, [success]);
+  }, [success, dispatch, navigation]);
 
-  // ─── Request Android storage permission ──────────────────────────────────
-  const requestStoragePermission = async () => {
-    if (Platform.OS !== 'android') return true;
+  // ── Permissions ───────────────────────────────────────────────────────────
+  const requestCameraPermission = async () => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
     try {
-      // Android 13+ uses READ_MEDIA_IMAGES; older versions use READ_EXTERNAL_STORAGE
-      const permission =
-        Platform.Version >= 33
-          ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
-          : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
-
-      const already = await PermissionsAndroid.check(permission);
-      if (already) return true;
-
-      const result = await PermissionsAndroid.request(permission, {
-        title:   'Photo Access',
-        message: 'MyLiveStockData needs access to your gallery to update your profile photo.',
-        buttonPositive: 'Allow',
-        buttonNegative: 'Deny',
-      });
-      return result === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (_) {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    } catch {
       return false;
     }
   };
 
-  // ─── Image picker ─────────────────────────────────────────────────────────
-  const handlePickImage = async () => {
-    if (!launchImageLibrary) {
+  // ── Image picker ──────────────────────────────────────────────────────────
+  const openCamera = async () => {
+    setImgModalOpen(false);
+    const ok = await requestCameraPermission();
+    if (!ok) {
       showAlert({
-        title:   'Rebuild Required',
-        message: 'Image picker native module is not linked. Please run: npx react-native run-android',
-        type:    'warning',
+        title: 'Permission Denied',
+        message: 'Camera permission is required.',
+        type: 'error',
+        confirmText: 'OK',
       });
       return;
     }
-
-    const hasPermission = await requestStoragePermission();
-    if (!hasPermission) {
-      showAlert({
-        title:   'Permission Denied',
-        message: 'Please allow photo access in your device settings.',
-        type:    'warning',
-      });
-      return;
-    }
-
-    try {
-      // Use the Promise (await) form — the callback form swallows native-module
-      // errors as unhandled rejections; await lets our catch block handle them.
-      const response = await launchImageLibrary({
-        mediaType:      'photo',
-        maxHeight:      500,
-        maxWidth:       500,
-        includeBase64:  false,
-        selectionLimit: 1,
-      });
-
-      if (!response || response.didCancel) return;
-
-      if (response.errorCode) {
-        showAlert({
-          title:   'Picker Error',
-          message: response.errorMessage || 'Could not open gallery.',
-          type:    'error',
-        });
-        return;
-      }
-
-      const asset = response.assets?.[0];
-      if (asset) setPickedImage(asset);
-
-    } catch (e) {
-      showAlert({
-        title:   'Image Picker Error',
-        message: 'Could not open gallery. Please rebuild the app or check permissions.',
-        type:    'error',
-      });
+    const result = await launchCamera({
+      mediaType: 'photo',
+      quality: 0.8,
+      maxWidth: 600,
+      maxHeight: 600,
+    });
+    if (result.assets?.[0]) {
+      setPickedImage(result.assets[0]);
     }
   };
 
-  // ─── Discard ──────────────────────────────────────────────────────────────
+  const openGallery = async () => {
+    setImgModalOpen(false);
+    const result = await launchImageLibrary({
+      mediaType: 'photo',
+      quality: 0.8,
+      maxWidth: 600,
+      maxHeight: 600,
+      selectionLimit: 1,
+    });
+    if (result.assets?.[0]) {
+      setPickedImage(result.assets[0]);
+    }
+  };
+
+  // ── Discard ───────────────────────────────────────────────────────────────
   const handleDiscard = () => {
     showAlert({
-      title:       'Discard Changes',
-      message:     'Are you sure you want to discard all changes?',
-      type:        'confirm',
+      title: 'Discard Changes',
+      message: 'Are you sure you want to discard all changes?',
+      type: 'confirm',
       confirmText: 'Yes, Discard',
-      cancelText:  'Keep Editing',
-      onConfirm:   () => navigation.goBack(),
+      cancelText: 'Keep Editing',
+      onConfirm: () => navigation.goBack(),
     });
   };
 
-  // ─── Save ─────────────────────────────────────────────────────────────────
+  // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = () => {
     if (!form.full_name.trim()) {
-      showAlert({ title: 'Missing Field', message: 'Please enter your full name.', type: 'warning' });
+      showAlert({
+        title: 'Missing Field',
+        message: 'Please enter your full name.',
+        type: 'warning',
+        confirmText: 'OK',
+      });
       return;
     }
     if (!form.phone_number.trim()) {
-      showAlert({ title: 'Missing Field', message: 'Please enter your phone number.', type: 'warning' });
+      showAlert({
+        title: 'Missing Field',
+        message: 'Please enter your phone number.',
+        type: 'warning',
+        confirmText: 'OK',
+      });
       return;
     }
 
-    if (accessToken) setAuthToken(accessToken);
+    if (accessToken) {
+      setAuthToken(accessToken);
+    }
 
-    let payload;
-
+    // Always use FormData so the backend receives multipart (required when
+    // profile_image is included; accepted either way).
+    const payload = new FormData();
+    payload.append('full_name', form.full_name.trim());
+    payload.append('phone_number', form.phone_number.trim());
+    payload.append('address', form.address.trim());
     if (pickedImage) {
-      // Photo selected → must use FormData so the binary file travels correctly
-      payload = new FormData();
-      payload.append('full_name',    form.full_name.trim());
-      payload.append('phone_number', form.phone_number.trim());
-      payload.append('address',      form.address.trim());
       payload.append('profile_image', {
-        uri:  pickedImage.uri,
+        uri: pickedImage.uri,
         type: pickedImage.type || 'image/jpeg',
         name: pickedImage.fileName || 'profile.jpg',
       });
-    } else {
-      // No photo → send plain JSON.
-      // PATCH + FormData on Android via Axios fails with "Network Error";
-      // JSON avoids that entirely and DRF accepts both formats.
-      payload = {
-        full_name:    form.full_name.trim(),
-        phone_number: form.phone_number.trim(),
-        address:      form.address.trim(),
-      };
     }
 
-    successHandled.current = false;
     dispatch(updateProfile(payload));
   };
 
-  // ─── Avatar source ────────────────────────────────────────────────────────
-  const avatarSource = () => {
-    if (pickedImage)       return { uri: pickedImage.uri };
-    if (user?.profile_image) return { uri: resolveImageUrl(user.profile_image) };
-    return null;
-  };
-  const avatar = avatarSource();
+  // ── Avatar source ─────────────────────────────────────────────────────────
+  const avatar = pickedImage
+    ? {uri: pickedImage.uri}
+    : user?.profile_image
+    ? {uri: resolveImageUrl(user.profile_image)}
+    : null;
 
-  // ─── Full-screen loader while first fetch ─────────────────────────────────
+  // ── Full-screen loader on first fetch ─────────────────────────────────────
   if (loading && !user) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <SafeAreaView style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color={color.Secondry} />
-        <Text style={{ color: color.Secondry, marginTop: 12 }}>Loading profile…</Text>
-      </View>
+        <Text style={styles.loaderText}>Loading profile…</Text>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={color.Secondry} barStyle="light-content" />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={26} color="#fff" />
+          <MaterialIcons name="arrow-back" size={26} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        <View style={{ width: 26 }} />
+        <View style={{width: 26}} />
       </View>
 
-      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}>
 
         {/* Avatar */}
         <View style={styles.avatarWrap}>
-          <TouchableOpacity onPress={handlePickImage} style={styles.avatarCircle}>
+          <TouchableOpacity
+            style={styles.avatarCircle}
+            onPress={() => setImgModalOpen(true)}>
             {avatar ? (
               <Image source={avatar} style={styles.avatarImg} />
             ) : (
-              <Icon name="person" size={62} color="#fff" />
+              <MaterialIcons name="person" size={62} color="#fff" />
             )}
             <View style={styles.cameraTag}>
-              <Icon name="camera-alt" size={16} color="#fff" />
+              <MaterialIcons name="camera-alt" size={16} color="#fff" />
             </View>
           </TouchableOpacity>
           <Text style={styles.tapText}>Tap to change photo</Text>
@@ -281,48 +273,61 @@ export default function EditprofileScreen({ navigation }) {
 
           <Text style={styles.label}>Full Name</Text>
           <View style={styles.inputRow}>
+            <MaterialIcons name="person" size={20} color={color.Secondry} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="Full Name"
               placeholderTextColor="#aaa"
               value={form.full_name}
-              onChangeText={(v) => setForm({ ...form, full_name: v })}
+              onChangeText={v => setForm({...form, full_name: v})}
             />
-            <Icon name="person" size={22} color={color.Secondry} />
           </View>
 
           <Text style={styles.label}>Phone Number</Text>
           <View style={styles.inputRow}>
+            <MaterialIcons name="phone" size={20} color={color.Secondry} style={styles.inputIcon} />
             <TextInput
               style={styles.input}
               placeholder="Phone Number"
               placeholderTextColor="#aaa"
               keyboardType="phone-pad"
               value={form.phone_number}
-              onChangeText={(v) => setForm({ ...form, phone_number: v })}
+              onChangeText={v => setForm({...form, phone_number: v})}
             />
-            <Icon name="phone" size={22} color={color.Secondry} />
+          </View>
+
+          <Text style={styles.label}>Email</Text>
+          <View style={[styles.inputRow, styles.readOnlyRow]}>
+            <MaterialIcons name="email" size={20} color="#bbb" style={styles.inputIcon} />
+            <Text style={[styles.input, styles.readOnlyText]}>
+              {user?.email || '—'}
+            </Text>
           </View>
 
           <Text style={styles.label}>CNIC Number</Text>
           <View style={[styles.inputRow, styles.readOnlyRow]}>
+            <MaterialIcons name="credit-card" size={20} color="#bbb" style={styles.inputIcon} />
             <Text style={[styles.input, styles.readOnlyText]}>
               {user?.cnic_no || '—'}
             </Text>
-            <Icon name="credit-card" size={22} color="#bbb" />
           </View>
 
           <Text style={styles.label}>Address</Text>
-          <View style={[styles.inputRow, { alignItems: 'flex-start', paddingTop: 10 }]}>
+          <View style={[styles.inputRow, {alignItems: 'flex-start', paddingTop: 10}]}>
+            <MaterialIcons
+              name="location-on"
+              size={20}
+              color={color.Secondry}
+              style={[styles.inputIcon, {marginTop: 2}]}
+            />
             <TextInput
-              style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+              style={[styles.input, {height: 80, textAlignVertical: 'top'}]}
               placeholder="Address"
               placeholderTextColor="#aaa"
               multiline
               value={form.address}
-              onChangeText={(v) => setForm({ ...form, address: v })}
+              onChangeText={v => setForm({...form, address: v})}
             />
-            <Icon name="location-on" size={22} color={color.Secondry} style={{ marginTop: 2 }} />
           </View>
 
         </View>
@@ -337,7 +342,7 @@ export default function EditprofileScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.btn, styles.saveBtn, loading && { opacity: 0.65 }]}
+            style={[styles.btn, styles.saveBtn, loading && styles.btnDisabled]}
             onPress={handleSave}
             disabled={loading}>
             {loading ? (
@@ -349,54 +354,180 @@ export default function EditprofileScreen({ navigation }) {
         </View>
 
       </ScrollView>
-    </View>
+
+      {/* Image source modal */}
+      <Modal
+        visible={imgModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setImgModalOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>Change Profile Photo</Text>
+
+            <TouchableOpacity style={styles.modalOption} onPress={openCamera}>
+              <MaterialIcons name="camera-alt" size={24} color={color.Secondry} />
+              <Text style={styles.modalOptionText}>Take Photo</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.modalOption} onPress={openGallery}>
+              <MaterialIcons name="photo-library" size={24} color={color.Secondry} />
+              <Text style={styles.modalOptionText}>Choose from Gallery</Text>
+            </TouchableOpacity>
+
+            {pickedImage && (
+              <TouchableOpacity
+                style={styles.modalOption}
+                onPress={() => {setPickedImage(null); setImgModalOpen(false);}}>
+                <MaterialIcons name="delete-outline" size={24} color="#e53935" />
+                <Text style={[styles.modalOptionText, {color: '#e53935'}]}>
+                  Remove Photo
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              style={styles.modalCancel}
+              onPress={() => setImgModalOpen(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container:   { flex: 1, backgroundColor: '#f5f5f5' },
+  container: {flex: 1, backgroundColor: '#f5f5f5'},
+  centered: {justifyContent: 'center', alignItems: 'center'},
+  loaderText: {color: color.Secondry, marginTop: 12},
 
   header: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    justifyContent:    'space-between',
-    backgroundColor:   color.Secondry,
-    paddingHorizontal: 16,
-    paddingVertical:   14,
-  },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-
-  avatarWrap:   { alignItems: 'center', marginVertical: 24 },
-  avatarCircle: {
-    width: 110, height: 110, borderRadius: 55,
+    height: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: color.Secondry,
-    justifyContent: 'center', alignItems: 'center',
+    paddingHorizontal: 16,
   },
-  avatarImg:  { width: 110, height: 110, borderRadius: 55 },
-  cameraTag:  {
-    position: 'absolute', bottom: 4, right: 4,
-    backgroundColor: '#333', borderRadius: 14, padding: 5,
+  headerTitle: {color: '#fff', fontSize: 20, fontWeight: 'bold'},
+
+  scroll: {paddingBottom: 30},
+
+  // ── Avatar ──────────────────────────────────────────────────────────────────
+  avatarWrap: {alignItems: 'center', marginVertical: 24},
+  avatarCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: color.Secondry,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: {width: 0, height: 3},
   },
-  tapText: { marginTop: 8, color: '#888', fontSize: 13 },
+  avatarImg: {width: 110, height: 110, borderRadius: 55},
+  cameraTag: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: '#333',
+    borderRadius: 14,
+    padding: 5,
+  },
+  tapText: {marginTop: 8, color: '#888', fontSize: 13},
 
-  form:  { paddingHorizontal: 20 },
-  label: { fontSize: 13, fontWeight: '600', color: '#555', marginBottom: 4, marginLeft: 4 },
-
+  // ── Form ────────────────────────────────────────────────────────────────────
+  form: {paddingHorizontal: 20},
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 4,
+    marginLeft: 4,
+  },
   inputRow: {
-    flexDirection: 'row', alignItems: 'center',
-    borderWidth: 2, borderColor: color.Secondry, borderRadius: 10,
-    paddingHorizontal: 12, backgroundColor: '#fff', marginBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: color.Secondry,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    marginBottom: 14,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    shadowOffset: {width: 0, height: 1},
   },
-  input:        { flex: 1, fontSize: 15, color: '#333', paddingVertical: 10 },
-  readOnlyRow:  { borderColor: '#ddd', backgroundColor: '#f9f9f9' },
-  readOnlyText: { color: '#999' },
+  inputIcon: {marginRight: 10},
+  input: {flex: 1, fontSize: 15, color: '#333', paddingVertical: 12},
+  readOnlyRow: {borderColor: '#e0e0e0', backgroundColor: '#f9f9f9', elevation: 0},
+  readOnlyText: {color: '#aaa'},
 
+  // ── Buttons ─────────────────────────────────────────────────────────────────
   btnRow: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 20, gap: 12,
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 20,
+    gap: 12,
   },
-  btn:        { flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center' },
-  discardBtn: { backgroundColor: '#e53935' },
-  saveBtn:    { backgroundColor: color.Secondry },
-  btnText:    { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  btn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  discardBtn: {backgroundColor: '#e53935'},
+  saveBtn: {backgroundColor: color.Secondry},
+  btnDisabled: {opacity: 0.65},
+  btnText: {color: '#fff', fontWeight: 'bold', fontSize: 16},
+
+  // ── Photo modal ─────────────────────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 8,
+    paddingBottom: 30,
+  },
+  modalTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#888',
+    textAlign: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    gap: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
+  },
+  modalOptionText: {fontSize: 15, fontWeight: '600', color: '#222'},
+  modalCancel: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginTop: 4,
+  },
+  modalCancelText: {fontSize: 15, color: '#888', fontWeight: '600'},
 });

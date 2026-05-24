@@ -133,7 +133,11 @@ export const updateProfile = createAsyncThunk(
       if (accessToken) {
         setAuthToken(accessToken);
       }
-      const res = await ApiService.patch(ENDPOINTS.UPDATE_PROFILE, formData);
+      const config =
+        formData instanceof FormData
+          ? {headers: {'Content-Type': 'multipart/form-data'}}
+          : {};
+      const res = await ApiService.patch(ENDPOINTS.UPDATE_PROFILE, formData, config);
       return res.data;
     } catch (err) {
       return rejectWithValue(err);
