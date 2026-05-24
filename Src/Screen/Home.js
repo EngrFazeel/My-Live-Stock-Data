@@ -32,15 +32,16 @@ import {showAlert} from '../Utils/SweetAlert';
 import {resolveImageUrl} from '../Utils/imageHelper';
 
 const {width} = Dimensions.get('window');
+const DRAWER_WIDTH = width * 0.72;
 
 export default function HomeScreen({navigation}) {
   const dispatch = useDispatch();
-  const {list: animals, loading, error, page, totalPages} = useSelector(
+  const {list: animals, loading, error, totalPages} = useSelector(
     s => s.animals,
   );
   const {user} = useSelector(s => s.auth);
 
-  const animation = useRef(new Animated.Value(-width * 0.72)).current;
+  const animation = useRef(new Animated.Value(-(DRAWER_WIDTH + 20))).current;
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -71,7 +72,7 @@ export default function HomeScreen({navigation}) {
   // ─── Drawer helpers ───────────────────────────────────────────────────────
   const toggleDrawer = () => {
     Animated.timing(animation, {
-      toValue: drawerOpen ? -width * 0.72 : 0,
+      toValue: drawerOpen ? -(DRAWER_WIDTH + 20) : 0,
       duration: 300,
       useNativeDriver: false,
     }).start();
@@ -427,7 +428,7 @@ export default function HomeScreen({navigation}) {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {flex: 1, backgroundColor: '#f0f0f0'},
+  container: {flex: 1, backgroundColor: '#f0f0f0', overflow: 'hidden'},
 
   header: {
     height: 60,
@@ -562,6 +563,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     elevation: 10,
     zIndex: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: {width: 4, height: 0},
   },
   drawerHeader: {
     backgroundColor: color.Secondry,
