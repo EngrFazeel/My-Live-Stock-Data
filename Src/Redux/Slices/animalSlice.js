@@ -1,64 +1,80 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import ApiService from '../../Services/ApiService';
-import { ENDPOINTS } from '../../Config/BaseUrl';
+import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
+import ApiService, {setAuthToken} from '../../Services/ApiService';
+import {ENDPOINTS} from '../../Config/BaseUrl';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const assertToken = getState => {
+  const {accessToken} = getState().auth;
+  if (accessToken) {
+    setAuthToken(accessToken);
+  }
+};
+
+const multipartConfig = {headers: {'Content-Type': 'multipart/form-data'}};
 
 // ─── Async Thunks ─────────────────────────────────────────────────────────────
 
 export const fetchAnimals = createAsyncThunk(
   'animals/fetchAll',
-  async (_, { rejectWithValue }) => {
+  async (_, {rejectWithValue, getState}) => {
     try {
+      assertToken(getState);
       const res = await ApiService.get(ENDPOINTS.GET_ANIMALS);
-      return res.data;
+      // Handle both paginated { results: [...] } and plain array responses
+      return Array.isArray(res.data) ? res.data : res.data.results ?? [];
     } catch (err) {
       return rejectWithValue(err);
     }
-  }
+  },
 );
 
 export const addAnimal = createAsyncThunk(
   'animals/add',
-  async (animalData, { rejectWithValue }) => {
+  async (formData, {rejectWithValue, getState}) => {
     try {
-      // animalData can be a plain object or FormData (when sending images)
-      const isFormData = animalData instanceof FormData;
-      const config = isFormData
-        ? { headers: { 'Content-Type': 'multipart/form-data' } }
-        : {};
-      const res = await ApiService.post(ENDPOINTS.ADD_ANIMAL, animalData, config);
+      assertToken(getState);
+      const res = await ApiService.post(
+        ENDPOINTS.ADD_ANIMAL,
+        formData,
+        multipartConfig,
+      );
       return res.data;
     } catch (err) {
       return rejectWithValue(err);
     }
-  }
+  },
 );
 
 export const updateAnimal = createAsyncThunk(
   'animals/update',
-  async ({ id, data }, { rejectWithValue }) => {
+  async ({id, data}, {rejectWithValue, getState}) => {
     try {
-      const isFormData = data instanceof FormData;
-      const config = isFormData
-        ? { headers: { 'Content-Type': 'multipart/form-data' } }
-        : {};
-      const res = await ApiService.post(ENDPOINTS.UPDATE_ANIMAL(id), data, config);
+      assertToken(getState);
+      const config = data instanceof FormData ? multipartConfig : {};
+      const res = await ApiService.patch(
+        ENDPOINTS.UPDATE_ANIMAL(id),
+        data,
+        config,
+      );
       return res.data;
     } catch (err) {
       return rejectWithValue(err);
     }
-  }
+  },
 );
 
 export const deleteAnimal = createAsyncThunk(
   'animals/delete',
-  async (id, { rejectWithValue }) => {
+  async (id, {rejectWithValue, getState}) => {
     try {
+      assertToken(getState);
       await ApiService.delete(ENDPOINTS.DELETE_ANIMAL(id));
-      return id; // return the id so we can remove it from the list
+      return id;
     } catch (err) {
       return rejectWithValue(err);
     }
-  }
+  },
 );
 
 // ─── Slice ────────────────────────────────────────────────────────────────────
@@ -66,59 +82,67 @@ export const deleteAnimal = createAsyncThunk(
 const animalSlice = createSlice({
   name: 'animals',
   initialState: {
-    list:    [],
+    list: [],
     loading: false,
-    error:   null,
+    error: null,
     success: null,
   },
   reducers: {
-    clearAnimalMessages: (state) => {
-      state.error   = null;
+    clearAnimalMessages: state => {
+      state.error = null;
       state.success = null;
     },
   },
-  extraReducers: (builder) => {
-    const pending  = (state)         => { state.loading = true;  state.error = null; };
-    const rejected = (state, action) => { state.loading = false; state.error = action.payload; };
+  extraReducers: builder => {
+    const pending = state => {
+      state.loading = true;
+      state.error = null;
+    };
+    const rejected = (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    };
 
     builder
       // Fetch all
-      .addCase(fetchAnimals.pending,   pending)
+      .addCase(fetchAnimals.pending, pending)
       .addCase(fetchAnimals.fulfilled, (state, action) => {
         state.loading = false;
-        state.list    = action.payload;
+        state.list = action.payload;
       })
-      .addCase(fetchAnimals.rejected,  rejected)
+      .addCase(fetchAnimals.rejected, rejected)
 
       // Add
-      .addCase(addAnimal.pending,   pending)
+      .addCase(addAnimal.pending, pending)
       .addCase(addAnimal.fulfilled, (state, action) => {
         state.loading = false;
-        state.list.unshift(action.payload); // newest first
+        state.list.unshift(action.payload);
         state.success = 'Animal added successfully!';
       })
-      .addCase(addAnimal.rejected,  rejected)
+      .addCase(addAnimal.rejected, rejected)
 
       // Update
-      .addCase(updateAnimal.pending,   pending)
+      .addCase(updateAnimal.pending, pending)
       .addCase(updateAnimal.fulfilled, (state, action) => {
         state.loading = false;
-        const index = state.list.findIndex((a) => a.id === action.payload.id);
-        if (index !== -1) state.list[index] = action.payload;
+        const idx = state.list.findIndex(a => a.id === action.payload.id);
+        if (idx !== -1) {
+          state.list[idx] = action.payload;
+        }
         state.success = 'Animal updated successfully!';
       })
-      .addCase(updateAnimal.rejected,  rejected)
+      .addCase(updateAnimal.rejected, rejected)
 
       // Delete
-      .addCase(deleteAnimal.pending,   pending)
+      .addCase(deleteAnimal.pending, pending)
       .addCase(deleteAnimal.fulfilled, (state, action) => {
         state.loading = false;
-        state.list    = state.list.filter((a) => a.id !== action.payload);
+        state.list = state.list.filter(a => a.id !== action.payload);
         state.success = 'Animal deleted successfully!';
       })
-      .addCase(deleteAnimal.rejected,  rejected);
+      .addCase(deleteAnimal.rejected, rejected);
   },
 });
 
-export const { clearAnimalMessages } = animalSlice.actions;
+export const {clearAnimalMessages} = animalSlice.actions;
 export default animalSlice.reducer;

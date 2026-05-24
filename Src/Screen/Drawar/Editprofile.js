@@ -39,9 +39,11 @@ export default function EditprofileScreen({ navigation }) {
   });
   const [pickedImage,  setPickedImage]  = useState(null);
   const successHandled = useRef(false);
+  const errorHandled   = useRef(false);
 
-  // ─── On mount: re-assert token into Axios headers, then load profile ────
+  // ─── On mount: clear stale messages, re-assert token, load profile ───────
   useEffect(() => {
+    dispatch(clearAuthMessages());          // prevent stale error/success from previous screen
     if (accessToken) setAuthToken(accessToken);
     if (!user)       dispatch(getProfile());
   }, []);
@@ -58,7 +60,8 @@ export default function EditprofileScreen({ navigation }) {
 
   // ─── Error alert ──────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!error) return;
+    if (!error || errorHandled.current) return;
+    errorHandled.current = true;
     const isExpired = typeof error === 'string' && error.toLowerCase().includes('session expired');
     showAlert({
       title:       isExpired ? 'Session Expired' : 'Update Failed',
@@ -69,6 +72,7 @@ export default function EditprofileScreen({ navigation }) {
       confirmText: 'OK',
       onConfirm:   () => {
         dispatch(clearAuthMessages());
+        errorHandled.current = false;
         if (isExpired) navigation.replace('Login');
       },
     });

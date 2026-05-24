@@ -1,268 +1,665 @@
-import React, { Component } from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
-    View,
-    Text,
-    TextInput,
-    Image,
-    TouchableOpacity,
-    StatusBar,
-    ScrollView,
+  View,
+  Text,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  StatusBar,
+  ScrollView,
+  ActivityIndicator,
+  Platform,
+  PermissionsAndroid,
+  StyleSheet,
 } from 'react-native';
-
-import { color } from '../Color';
+import {useDispatch, useSelector} from 'react-redux';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Dropdown } from 'react-native-element-dropdown';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {Dropdown} from 'react-native-element-dropdown';
 import DatePicker from 'react-native-date-picker';
 
-export default class Addanimal extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            age: null,
-            gender: null,
-            photo: null,
-            scanImage: null,
-            date: new Date(),
-            show: false,
-            selectedDate: '',
-        };
+import {color} from '../Color';
+import {
+  addAnimal,
+  updateAnimal,
+  clearAnimalMessages,
+} from '../Redux/Slices/animalSlice';
+import {showAlert} from '../Utils/SweetAlert';
+import {setAuthToken} from '../Services/ApiService';
+import {resolveImageUrl} from '../Utils/imageHelper';
+
+// Lazy-import image picker to avoid crash when native module is not linked
+let launchImageLibrary = null;
+try {
+  launchImageLibrary = require('react-native-image-picker').launchImageLibrary;
+} catch (_) {}
+
+const GENDER_DATA = [
+  {label: 'Male', value: 'male'},
+  {label: 'Female', value: 'female'},
+];
+
+const CATEGORY_DATA = [
+  {label: 'Cow', value: 'cow'},
+  {label: 'Ox', value: 'ox'},
+  {label: 'Buffalo', value: 'buffalo'},
+  {label: 'Buffalo Female', value: 'buffalo_female'},
+];
+
+export default function AddAnimalScreen({navigation, route}) {
+  const dispatch = useDispatch();
+  const {accessToken} = useSelector(s => s.auth);
+  const {loading, error, success} = useSelector(s => s.animals);
+
+  // route.params.animal is set when navigating from Home for editing
+  const editAnimal = route.params?.animal ?? null;
+  const isEdit = !!editAnimal;
+
+  // ─── Form state ───────────────────────────────────────────────────────────
+  const [animalName, setAnimalName] = useState('');
+  const [breed, setBreed] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState(null);
+  const [category, setCategory] = useState(null);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [pickerDate, setPickerDate] = useState(new Date());
+  const [showDate, setShowDate] = useState(false);
+  const [animalImage, setAnimalImage] = useState(null); // { uri, type, fileName }
+  const [noseScanImg, setNoseScanImg] = useState(null); // { uri, type, fileName }
+
+  const successHandled = useRef(false);
+  const errorHandled = useRef(false);
+
+  // ─── On mount: re-assert token, clear stale messages ─────────────────────
+  useEffect(() => {
+    if (accessToken) {
+      setAuthToken(accessToken);
     }
+    dispatch(clearAnimalMessages());
+  }, [accessToken, dispatch]);
 
-    ageData = [
-        { label: '1 Year', value: '1' },
-        { label: '2 Years', value: '2' },
-        { label: '3 Years', value: '3' },
-        { label: '4 Years', value: '4' },
-        { label: '5 Years', value: '5' },
-    ];
+  // ─── Populate form when editing — intentionally mount-only so user edits are not reset ────
+  useEffect(() => {
+    if (!isEdit) {
+      return;
+    }
+    setAnimalName(editAnimal.animal_name || '');
+    setBreed(editAnimal.breed || '');
+    setAge(String(editAnimal.age ?? ''));
+    setGender(editAnimal.gender || null);
+    setCategory(editAnimal.category || null);
+    if (editAnimal.registration_date) {
+      setSelectedDate(editAnimal.registration_date);
+      setPickerDate(new Date(editAnimal.registration_date));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    genderData = [
-        { label: 'Cow', value: 'cow' },
-        { label: 'OX', value: 'ox' },
-        { label: 'Buffalo', value: 'buffalo' },
-        { label: 'Buffalo Female', value: 'buffalo_female' },
-    ];
-
-    componentDidMount() {
-        this.focusListener = this.props.navigation.addListener('focus', () => {
-            if (this.props.route?.params?.scanImage) {
-                this.setState({ scanImage: this.props.route.params.scanImage });
-                this.props.navigation.setParams({ scanImage: null });
-            }
+  // ─── Receive nose scan image back from Scansave/camera screen ────────────
+  useEffect(() => {
+    const unsub = navigation.addListener('focus', () => {
+      if (route.params?.scanImage) {
+        setNoseScanImg({
+          uri: route.params.scanImage,
+          type: 'image/jpeg',
+          fileName: 'nose_scan.jpg',
         });
+        navigation.setParams({scanImage: null});
+      }
+    });
+    return unsub;
+  }, [navigation, route.params]);
+
+  // ─── Error alert ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!error || errorHandled.current) {
+      return;
+    }
+    errorHandled.current = true;
+    showAlert({
+      title: isEdit ? 'Update Failed' : 'Add Failed',
+      message:
+        typeof error === 'string'
+          ? error
+          : 'Something went wrong. Please try again.',
+      type: 'error',
+      confirmText: 'OK',
+      onConfirm: () => {
+        dispatch(clearAnimalMessages());
+        errorHandled.current = false;
+      },
+    });
+  }, [error, dispatch, isEdit]);
+
+  // ─── Success alert ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!success || successHandled.current) {
+      return;
+    }
+    successHandled.current = true;
+    showAlert({
+      title: isEdit ? 'Updated!' : 'Animal Added!',
+      message: success,
+      type: 'success',
+      confirmText: 'OK',
+      onConfirm: () => {
+        dispatch(clearAnimalMessages());
+        navigation.goBack();
+      },
+    });
+  }, [success, dispatch, isEdit, navigation]);
+
+  // ─── Android gallery permission ───────────────────────────────────────────
+  const requestGalleryPermission = async () => {
+    if (Platform.OS !== 'android') {
+      return true;
+    }
+    try {
+      const perm =
+        Platform.Version >= 33
+          ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES
+          : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
+      const already = await PermissionsAndroid.check(perm);
+      if (already) {
+        return true;
+      }
+      const result = await PermissionsAndroid.request(perm, {
+        title: 'Photo Access',
+        message: 'MyLiveStockData needs access to your gallery.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Deny',
+      });
+      return result === PermissionsAndroid.RESULTS.GRANTED;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  // ─── Image picker ─────────────────────────────────────────────────────────
+  const pickImage = async target => {
+    if (!launchImageLibrary) {
+      showAlert({
+        title: 'Rebuild Required',
+        message:
+          'Image picker is not linked. Please run: npx react-native run-android',
+        type: 'warning',
+      });
+      return;
+    }
+    const ok = await requestGalleryPermission();
+    if (!ok) {
+      showAlert({
+        title: 'Permission Denied',
+        message: 'Please allow photo access in your device settings.',
+        type: 'warning',
+      });
+      return;
+    }
+    try {
+      const res = await launchImageLibrary({
+        mediaType: 'photo',
+        maxHeight: 800,
+        maxWidth: 800,
+        includeBase64: false,
+        selectionLimit: 1,
+      });
+      if (!res || res.didCancel) {
+        return;
+      }
+      if (res.errorCode) {
+        showAlert({
+          title: 'Picker Error',
+          message: res.errorMessage || 'Could not open gallery.',
+          type: 'error',
+        });
+        return;
+      }
+      const asset = res.assets?.[0];
+      if (!asset) {
+        return;
+      }
+      const img = {
+        uri: asset.uri,
+        type: asset.type || 'image/jpeg',
+        fileName: asset.fileName || `${target}.jpg`,
+      };
+      if (target === 'animal') {
+        setAnimalImage(img);
+      } else {
+        setNoseScanImg(img);
+      }
+    } catch (_) {
+      showAlert({
+        title: 'Error',
+        message: 'Could not open gallery.',
+        type: 'error',
+      });
+    }
+  };
+
+  // ─── Discard ──────────────────────────────────────────────────────────────
+  const handleDiscard = () => {
+    showAlert({
+      title: 'Discard Changes',
+      message: 'Are you sure you want to discard all changes?',
+      type: 'confirm',
+      confirmText: 'Yes, Discard',
+      cancelText: 'Keep Editing',
+      onConfirm: () => navigation.goBack(),
+    });
+  };
+
+  // ─── Save / Update ────────────────────────────────────────────────────────
+  const handleSave = () => {
+    if (!animalName.trim()) {
+      showAlert({
+        title: 'Missing Field',
+        message: 'Please enter animal name.',
+        type: 'warning',
+      });
+      return;
+    }
+    if (!breed.trim()) {
+      showAlert({
+        title: 'Missing Field',
+        message: 'Please enter breed.',
+        type: 'warning',
+      });
+      return;
+    }
+    if (!age.trim() || isNaN(Number(age))) {
+      showAlert({
+        title: 'Missing Field',
+        message: 'Please enter a valid age in months.',
+        type: 'warning',
+      });
+      return;
+    }
+    if (!gender) {
+      showAlert({
+        title: 'Missing Field',
+        message: 'Please select gender.',
+        type: 'warning',
+      });
+      return;
+    }
+    if (!category) {
+      showAlert({
+        title: 'Missing Field',
+        message: 'Please select category.',
+        type: 'warning',
+      });
+      return;
+    }
+    if (!selectedDate) {
+      showAlert({
+        title: 'Missing Field',
+        message: 'Please select registration date.',
+        type: 'warning',
+      });
+      return;
     }
 
-    showDatePicker = () => {
-        this.setState({ show: true });
-    };
+    if (accessToken) {
+      setAuthToken(accessToken);
+    }
 
-    render() {
-        return (
-            <View style={{ flex: 1, backgroundColor: color.textcolor2 }}>
-                <StatusBar backgroundColor={color.StatusBar} />
+    const formData = new FormData();
+    formData.append('animal_name', animalName.trim());
+    formData.append('breed', breed.trim());
+    formData.append('age', parseInt(age, 10));
+    formData.append('gender', gender);
+    formData.append('category', category);
+    formData.append('registration_date', selectedDate);
 
-                <ScrollView>
+    if (animalImage) {
+      formData.append('image', {
+        uri: animalImage.uri,
+        type: animalImage.type,
+        name: animalImage.fileName,
+      });
+    }
+    if (noseScanImg) {
+      formData.append('nose_scan_image', {
+        uri: noseScanImg.uri,
+        type: noseScanImg.type,
+        name: noseScanImg.fileName,
+      });
+    }
 
-                    {/* HEADER */}
-                    <View style={{ height: 220, justifyContent: 'center', alignItems: 'center',}}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, backgroundColor:color.Secondry , height:50, width:'100%', marginTop: -45, }}>
-                            <TouchableOpacity onPress={() => this.props.navigation.goBack()}>
-                                <Ionicons name="arrow-back" size={30} marginLeft= {20} color={color.primary} />
-                            </TouchableOpacity>
+    successHandled.current = false;
+    errorHandled.current = false;
 
-                            <Text style={{
-                                fontSize: 24,
-                                fontWeight: 'bold',
-                                marginLeft: 40,
-                                color: color.primary
-                            }}>
-                                Add Animal Details
-                            </Text>
-                        </View>
+    if (isEdit) {
+      dispatch(updateAnimal({id: editAnimal.id, data: formData}));
+    } else {
+      dispatch(addAnimal(formData));
+    }
+  };
 
-                        {/* PROFILE IMAGE */}
-                        <Image
-                            style={{ height: 100, width: 100, borderRadius: 50 }}
-                            source={
-                                this.state.photo
-                                    ? { uri: this.state.photo }
-                                    : require('../Assets/Profile.png')
-                            }
-                        />
+  // ─── Resolve display images ───────────────────────────────────────────────
+  const animalImgSrc = animalImage
+    ? {uri: animalImage.uri}
+    : isEdit && editAnimal?.image
+    ? {uri: resolveImageUrl(editAnimal.image)}
+    : null;
 
-                        <TouchableOpacity>
-                            <Image
-                                style={{
-                                    height: 30,
-                                    width: 30,
-                                    marginTop: -25,
-                                    marginLeft: 50
-                                }}
-                                source={require('../Assets/Camera.png')}
-                            />
-                        </TouchableOpacity>
-                    </View>
+  const noseSrc = noseScanImg
+    ? {uri: noseScanImg.uri}
+    : isEdit && editAnimal?.nose_scan?.scan_image
+    ? {uri: resolveImageUrl(editAnimal.nose_scan.scan_image)}
+    : null;
 
-                    {/* FORM */}
-                    <View style={{ width: '90%', alignSelf: 'center' }}>
+  // ─── UI ───────────────────────────────────────────────────────────────────
+  return (
+    <View style={{flex: 1, backgroundColor: '#f5f5f5'}}>
+      <StatusBar backgroundColor={color.Secondry} barStyle="light-content" />
 
-                        {/* NAME */}
-                        <View style={styles.inputBox}>
-                            <Image style={styles.iconImg} source={require('../Assets/Cow.png')} />
-                            <TextInput placeholder="Name" style={styles.input} placeholderTextColor="black" />
-                        </View>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={28} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          {isEdit ? 'Edit Animal' : 'Add Animal'}
+        </Text>
+        <View style={{width: 28}} />
+      </View>
 
-                        {/* OWNER */}
-                        <View style={styles.inputBox}>
-                            <MaterialCommunityIcons name="account" size={25} color={color.Secondry} />
-                            <TextInput placeholder="Owner Name" style={styles.input} placeholderTextColor="black" />
-                        </View>
-
-                        {/* PHONE */}
-                        <View style={styles.inputBox}>
-                            <Ionicons name="call" size={25} color={color.Secondry} />
-                            <TextInput placeholder="Phone Number" keyboardType="numeric" style={styles.input} placeholderTextColor="black" />
-                        </View>
-
-                        {/* DATE */}
-                        <View style={styles.inputBox}>
-                            <Ionicons name="calendar" size={25} color={color.Secondry} />
-                            <TouchableOpacity onPress={this.showDatePicker} style={{ flex: 1 }}>
-                                <Text style={{ marginLeft: 10, color: 'black' }}>
-                                    {this.state.selectedDate || 'Register Date'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* DROPDOWNS */}
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <Dropdown
-                                style={styles.dropdown}
-                                placeholder="Age"
-                                data={this.ageData}
-                                labelField="label"
-                                valueField="value"
-                                value={this.state.age}
-                                onChange={item => this.setState({ age: item.value })}
-                            />
-
-                            <Dropdown
-                                style={styles.dropdown}
-                                placeholder="Category"
-                                data={this.genderData}
-                                labelField="label"
-                                valueField="value"
-                                value={this.state.gender}
-                                onChange={item => this.setState({ gender: item.value })}
-                            />
-                        </View>
-
-                        {/* SCAN */}
-                        <TouchableOpacity
-                            style={styles.scanBox}
-                            onPress={() => this.props.navigation.navigate('Scansave')}
-                        >
-                            {
-                                this.state.scanImage
-                                    ? <Image source={{ uri: this.state.scanImage }} style={{ height: '100%', width: '100%' }} />
-                                    : <MaterialCommunityIcons name="line-scan" size={70} color={color.Secondry} />
-                            }
-                        </TouchableOpacity>
-
-                        {/* BUTTONS */}
-                        <View style={styles.btnRow}>
-                            <TouchableOpacity style={[styles.btn, { backgroundColor: 'red' }]}>
-                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Discard</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={[styles.btn, { backgroundColor: color.Secondry }]}
-                                onPress={() => this.props.navigation.navigate('Home')}
-                            >
-                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                    </View>
-
-                </ScrollView>
-
-                {/* DATE PICKER */}
-                <DatePicker
-                    modal
-                    open={this.state.show}
-                    date={this.state.date}
-                    mode="date"
-                    onConfirm={(date) => {
-                        const formattedDate = `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
-                        this.setState({
-                            date,
-                            selectedDate: formattedDate,
-                            show: false
-                        });
-                    }}
-                    onCancel={() => this.setState({ show: false })}
-                />
-
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        {/* Animal photo */}
+        <View style={styles.avatarWrap}>
+          <TouchableOpacity
+            onPress={() => pickImage('animal')}
+            style={styles.avatarCircle}>
+            {animalImgSrc ? (
+              <Image source={animalImgSrc} style={styles.avatarImg} />
+            ) : (
+              <MaterialIcons name="pets" size={52} color="#fff" />
+            )}
+            <View style={styles.cameraTag}>
+              <MaterialIcons name="camera-alt" size={16} color="#fff" />
             </View>
-        );
-    }
+          </TouchableOpacity>
+          <Text style={styles.tapText}>
+            Tap to {isEdit ? 'change' : 'add'} animal photo
+          </Text>
+        </View>
+
+        <View style={styles.form}>
+          {/* Animal Name */}
+          <Text style={styles.label}>Animal Name *</Text>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter animal name"
+              placeholderTextColor="#aaa"
+              value={animalName}
+              onChangeText={setAnimalName}
+            />
+            <MaterialIcons name="pets" size={22} color={color.Secondry} />
+          </View>
+
+          {/* Breed */}
+          <Text style={styles.label}>Breed *</Text>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter breed"
+              placeholderTextColor="#aaa"
+              value={breed}
+              onChangeText={setBreed}
+            />
+            <MaterialCommunityIcons
+              name="dna"
+              size={22}
+              color={color.Secondry}
+            />
+          </View>
+
+          {/* Age in months */}
+          <Text style={styles.label}>Age (months) *</Text>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 24"
+              placeholderTextColor="#aaa"
+              keyboardType="numeric"
+              value={age}
+              onChangeText={v => setAge(v.replace(/[^0-9]/g, ''))}
+            />
+            <Ionicons name="time-outline" size={22} color={color.Secondry} />
+          </View>
+
+          {/* Gender + Category side by side */}
+          <View style={styles.rowWrap}>
+            <View style={{flex: 1, marginRight: 8}}>
+              <Text style={styles.label}>Gender *</Text>
+              <Dropdown
+                style={styles.dropdown}
+                placeholder="Select"
+                placeholderStyle={styles.dropPlaceholder}
+                selectedTextStyle={styles.dropSelected}
+                data={GENDER_DATA}
+                labelField="label"
+                valueField="value"
+                value={gender}
+                onChange={item => setGender(item.value)}
+              />
+            </View>
+            <View style={{flex: 1}}>
+              <Text style={styles.label}>Category *</Text>
+              <Dropdown
+                style={styles.dropdown}
+                placeholder="Select"
+                placeholderStyle={styles.dropPlaceholder}
+                selectedTextStyle={styles.dropSelected}
+                data={CATEGORY_DATA}
+                labelField="label"
+                valueField="value"
+                value={category}
+                onChange={item => setCategory(item.value)}
+              />
+            </View>
+          </View>
+
+          {/* Registration Date */}
+          <Text style={styles.label}>Registration Date *</Text>
+          <TouchableOpacity
+            style={styles.inputRow}
+            onPress={() => setShowDate(true)}>
+            <Text
+              style={[
+                styles.input,
+                {paddingVertical: 12, color: selectedDate ? '#333' : '#aaa'},
+              ]}>
+              {selectedDate || 'Select date'}
+            </Text>
+            <Ionicons
+              name="calendar-outline"
+              size={22}
+              color={color.Secondry}
+            />
+          </TouchableOpacity>
+
+          {/* Nose Scan Image */}
+          <Text style={styles.label}>Nose Scan Image</Text>
+          <TouchableOpacity
+            style={styles.scanBox}
+            onPress={() => pickImage('nose')}>
+            {noseSrc ? (
+              <Image
+                source={noseSrc}
+                style={{height: '100%', width: '100%', borderRadius: 10}}
+              />
+            ) : (
+              <View style={{alignItems: 'center'}}>
+                <MaterialCommunityIcons
+                  name="line-scan"
+                  size={52}
+                  color={color.Secondry}
+                />
+                <Text style={styles.tapText}>Tap to pick from gallery</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Camera button for nose scan */}
+          <TouchableOpacity
+            style={styles.cameraBtn}
+            onPress={() => navigation.navigate('Scansave')}>
+            <MaterialIcons name="camera-alt" size={18} color="#fff" />
+            <Text style={styles.cameraBtnText}>Use Camera for Nose Scan</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Action buttons */}
+        <View style={styles.btnRow}>
+          <TouchableOpacity
+            style={[styles.btn, styles.discardBtn]}
+            onPress={handleDiscard}
+            disabled={loading}>
+            <Text style={styles.btnText}>Discard</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.btn, styles.saveBtn, loading && {opacity: 0.65}]}
+            onPress={handleSave}
+            disabled={loading}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.btnText}>{isEdit ? 'Update' : 'Save'}</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* Date Picker modal */}
+      <DatePicker
+        modal
+        open={showDate}
+        date={pickerDate}
+        mode="date"
+        onConfirm={date => {
+          const yyyy = date.getFullYear();
+          const mm = String(date.getMonth() + 1).padStart(2, '0');
+          const dd = String(date.getDate()).padStart(2, '0');
+          setSelectedDate(`${yyyy}-${mm}-${dd}`);
+          setPickerDate(date);
+          setShowDate(false);
+        }}
+        onCancel={() => setShowDate(false)}
+      />
+    </View>
+  );
 }
 
-const styles = {
-    inputBox: {
-        height: 50,
-        borderWidth: 2,
-        borderColor: color.borderColor,
-        borderRadius: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 10,
-        marginBottom: 12
-    },
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: color.Secondry,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  headerTitle: {color: '#fff', fontSize: 20, fontWeight: 'bold'},
 
-    input: {
-        flex: 1,
-        marginLeft: 10,
-        color: 'black'
-    },
+  avatarWrap: {alignItems: 'center', marginVertical: 22},
+  avatarCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: color.Secondry,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarImg: {width: 110, height: 110, borderRadius: 55},
+  cameraTag: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: '#333',
+    borderRadius: 14,
+    padding: 5,
+  },
+  tapText: {marginTop: 8, color: '#888', fontSize: 13},
 
-    iconImg: {
-        height: 25,
-        width: 25
-    },
+  form: {paddingHorizontal: 20},
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 4,
+    marginLeft: 2,
+  },
 
-    dropdown: {
-        height: 50,
-        width: '45%',
-        borderWidth: 2,
-        borderColor: color.Secondry,
-        borderRadius: 10,
-        paddingHorizontal: 10
-    },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: color.Secondry,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    backgroundColor: '#fff',
+    marginBottom: 14,
+  },
+  input: {flex: 1, fontSize: 15, color: '#333', paddingVertical: 10},
 
-    scanBox: {
-        height: 120,
-        borderWidth: 2,
-        borderColor: color.borderColor,
-        borderRadius: 10,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 15
-    },
+  rowWrap: {flexDirection: 'row', marginBottom: 14},
+  dropdown: {
+    borderWidth: 2,
+    borderColor: color.Secondry,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 48,
+    backgroundColor: '#fff',
+  },
+  dropPlaceholder: {color: '#aaa', fontSize: 14},
+  dropSelected: {color: '#333', fontSize: 14},
 
-    btnRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 20
-    },
+  scanBox: {
+    height: 130,
+    borderWidth: 2,
+    borderColor: color.Secondry,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
 
-    btn: {
-        height: 45,
-        width: '45%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 10
-    }
-};
+  cameraBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#555',
+    borderRadius: 8,
+    paddingVertical: 8,
+    marginBottom: 20,
+  },
+  cameraBtnText: {
+    color: '#fff',
+    marginLeft: 6,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+
+  btnRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    gap: 12,
+  },
+  btn: {flex: 1, paddingVertical: 13, borderRadius: 10, alignItems: 'center'},
+  discardBtn: {backgroundColor: '#e53935'},
+  saveBtn: {backgroundColor: color.Secondry},
+  btnText: {color: '#fff', fontWeight: 'bold', fontSize: 16},
+});

@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 import { color } from '../Color';
 import { getProfile, clearAuthMessages } from '../Redux/Slices/authSlice';
@@ -64,7 +63,7 @@ export default function ProfileScreen({ navigation }) {
   if (!user) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <MaterialIcons name="person-off" size={70} color="#ccc" />
+        <Icon name="person-off" size={70} color="#ccc" />
         <Text style={{ color: '#999', fontSize: 16, marginTop: 12, marginBottom: 24 }}>
           No profile data available
         </Text>
