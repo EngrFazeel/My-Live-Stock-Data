@@ -26,7 +26,6 @@ import Category2    from './Src/Screen/Category2';
 import Scan         from './Src/Screen/Guest/Scan';
 import Setting      from './Src/Screen/Guest/Setting';
 import Result       from './Src/Screen/Result';
-import Adduser      from './Src/Screen/Adduser';
 import Home         from './Src/Screen/Home';
 import Profile      from './Src/Screen/Profile';
 import Settings     from './Src/Screen/Settings';
@@ -111,7 +110,6 @@ function AppContent() {
         <Stack.Screen name="Login"         component={Login} />
         <Stack.Screen name="Signup"        component={Signup} />
         <Stack.Screen name="Result"        component={Result} />
-        <Stack.Screen name="Adduser"       component={Adduser} />
         <Stack.Screen name="Guest"         component={MyTabs} />
         <Stack.Screen name="Addanimal"     component={Addanimal} />
         <Stack.Screen name="Scansave"      component={Scansave} />
