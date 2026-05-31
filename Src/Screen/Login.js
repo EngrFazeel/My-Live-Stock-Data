@@ -213,7 +213,7 @@ export default function LoginScreen({ navigation }) {
             flexDirection:  'row',
             justifyContent: 'center',
             alignItems:     'center',
-            marginBottom:   30,
+            marginBottom:   10,
           }}>
           <Text style={{ color: 'black', fontSize: 17, fontWeight: '500' }}>
             Create New Account?
@@ -227,6 +227,28 @@ export default function LoginScreen({ navigation }) {
                 marginLeft: 6,
               }}>
               SignUp
+            </Text>
+          </TouchableOpacity>
+        </View>
+         <View
+          style={{
+            flexDirection:  'row',
+            justifyContent: 'center',
+            alignItems:     'center',
+            marginBottom:   30,
+          }}>
+          <Text style={{ color: 'black', fontSize: 17, fontWeight: '500' }}>
+            use as a
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Guest')}>
+            <Text
+              style={{
+                color:      color.Secondry,
+                fontSize:   18,
+                fontWeight: '700',
+                marginLeft: 6,
+              }}>
+              Guest
             </Text>
           </TouchableOpacity>
         </View>
