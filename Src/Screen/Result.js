@@ -78,6 +78,7 @@ export default function ResultScreen({navigation, route}) {
             index={index}
             totalMatches={totalMatches}
             isGuest={isGuest}
+            topPredictedId={predictedId}
           />
         ))}
 
@@ -88,7 +89,7 @@ export default function ResultScreen({navigation, route}) {
 }
 
 // ─── Full detail card (matches second image style) ────────────────────────────
-function AnimalDetailCard({animal, index, totalMatches, isGuest}) {
+function AnimalDetailCard({animal, index, totalMatches, isGuest, topPredictedId}) {
   const imgSrc = animal.image
     ? {uri: resolveImageUrl(animal.image)}
     : null;
@@ -205,7 +206,7 @@ function AnimalDetailCard({animal, index, totalMatches, isGuest}) {
         <DetailRow
           icon="fingerprint"
           label="Predicted ID"
-          value={animal.predicted_cattle_id ?? predictedId ?? '—'}
+          value={animal.predicted_cattle_id ?? topPredictedId ?? '—'}
         />
         {animal.best_scan?.predicted_cattle_id && (
           <>
