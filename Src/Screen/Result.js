@@ -17,15 +17,16 @@ import {resolveImageUrl} from '../Utils/imageHelper';
 export default function ResultScreen({navigation, route}) {
   const {result, isGuest = false} = route.params ?? {};
 
-  // Normalise: new format uses matched_animals[], old single-match uses matched_animal
-  const matchedAnimals = result?.matched_animals
-    ?? (result?.matched_animal ? [result.matched_animal] : []);
-  const totalMatches  = result?.total_matches ?? matchedAnimals.length;
-  const scanScore     = result?.scan_score    ?? 0;
-  const predictedId   = result?.predicted_cattle_id ?? '—';
-  const apiError      = result?.error;
+  // Normalise both formats: new array format and old single-match format
+  const matchedAnimals =
+    result?.matched_animals ??
+    (result?.matched_animal ? [result.matched_animal] : []);
+  const totalMatches = result?.total_matches ?? matchedAnimals.length;
+  const scanScore    = result?.scan_score ?? 0;
+  const predictedId  = result?.predicted_cattle_id ?? '—';
+  const apiError     = result?.error;
 
-  // ── No match / error screen ────────────────────────────────────────────────
+  // ── No match screen ────────────────────────────────────────────────────────
   if (totalMatches === 0 || matchedAnimals.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
@@ -39,20 +40,13 @@ export default function ResultScreen({navigation, route}) {
           <Text style={styles.noMatchHint}>
             {apiError || 'The nose scan did not match any registered animal.'}
           </Text>
-          {result?.predicted_cattle_id && (
+          {predictedId !== '—' && (
             <View style={styles.noMatchMeta}>
               <MaterialIcons name="fingerprint" size={15} color="#888" />
-              <Text style={styles.noMatchMetaText}>
-                Detected ID: {result.predicted_cattle_id}
-              </Text>
+              <Text style={styles.noMatchMetaText}>Detected ID: {predictedId}</Text>
             </View>
           )}
-          <TouchableOpacity
-            style={styles.scanAgainBtn}
-            onPress={() => navigation.goBack()}>
-            <MaterialIcons name="qr-code-scanner" size={18} color="#fff" />
-            <Text style={styles.scanAgainBtnText}>Scan Again</Text>
-          </TouchableOpacity>
+          <ScanAgainBtn navigation={navigation} />
         </View>
       </SafeAreaView>
     );
@@ -67,154 +61,193 @@ export default function ResultScreen({navigation, route}) {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
 
-        {/* ── Scan summary ─────────────────────────────────────────────────── */}
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryItem}>
-            <MaterialIcons name="check-circle" size={20} color="#2e7d32" />
-            <Text style={styles.summaryLabel}>Matches Found</Text>
-            <Text style={styles.summaryValue}>{totalMatches}</Text>
-          </View>
+        {/* ── Summary bar ────────────────────────────────────────────────── */}
+        <View style={styles.summaryBar}>
+          <SummaryItem icon="check-circle" iconColor="#2e7d32" label="Matches Found" value={String(totalMatches)} />
           <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
-            <MaterialIcons name="stars" size={20} color={color.Secondry} />
-            <Text style={styles.summaryLabel}>Scan Score</Text>
-            <Text style={styles.summaryValue}>
-              {(scanScore * 100).toFixed(2)}%
-            </Text>
-          </View>
+          <SummaryItem icon="stars" iconColor={color.Secondry} label="Scan Score" value={`${(scanScore * 100).toFixed(2)}%`} />
           <View style={styles.summaryDivider} />
-          <View style={styles.summaryItem}>
-            <MaterialIcons name="fingerprint" size={20} color="#555" />
-            <Text style={styles.summaryLabel}>Cattle ID</Text>
-            <Text style={styles.summaryValue} numberOfLines={1}>
-              {predictedId}
-            </Text>
-          </View>
+          <SummaryItem icon="fingerprint" iconColor="#555" label="Cattle ID" value={predictedId} />
         </View>
 
-        {/* ── Match cards ──────────────────────────────────────────────────── */}
-        <Text style={styles.sectionTitle}>
-          {totalMatches === 1 ? 'Matched Animal' : `Matched Animals (${totalMatches})`}
-        </Text>
-
+        {/* ── Animal cards ────────────────────────────────────────────────── */}
         {matchedAnimals.map((animal, index) => (
-          <AnimalCard
+          <AnimalDetailCard
             key={animal.animal_id ?? index}
             animal={animal}
             index={index}
+            totalMatches={totalMatches}
             isGuest={isGuest}
           />
         ))}
 
-        {/* ── Scan again ───────────────────────────────────────────────────── */}
-        <TouchableOpacity
-          style={styles.scanAgainBtn}
-          onPress={() => navigation.goBack()}>
-          <MaterialIcons name="qr-code-scanner" size={18} color="#fff" />
-          <Text style={styles.scanAgainBtnText}>Scan Again</Text>
-        </TouchableOpacity>
-
+        <ScanAgainBtn navigation={navigation} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-// ─── Animal match card ─────────────────────────────────────────────────────────
-function AnimalCard({animal, index, isGuest}) {
+// ─── Full detail card (matches second image style) ────────────────────────────
+function AnimalDetailCard({animal, index, totalMatches, isGuest}) {
   const imgSrc = animal.image
     ? {uri: resolveImageUrl(animal.image)}
     : null;
 
   const scoreGap = animal.score_difference ?? animal.animal_nose_score ?? 0;
-  const scoreLabel = scoreGap < 0.01
-    ? 'Excellent'
-    : scoreGap < 0.05
-    ? 'Good'
-    : 'Fair';
-  const scoreBgColor = scoreGap < 0.01
-    ? '#2e7d32'
-    : scoreGap < 0.05
-    ? '#e65100'
-    : '#555';
+  const scoreLabel =
+    scoreGap < 0.01 ? 'Excellent' : scoreGap < 0.05 ? 'Good' : 'Fair';
+  const scoreBg =
+    scoreGap < 0.01 ? '#2e7d32' : scoreGap < 0.05 ? '#e65100' : '#888';
+
+  const noseScanImg = animal.best_scan?.scan_image
+    ? {uri: resolveImageUrl(animal.best_scan.scan_image)}
+    : null;
+
+  const scanDate = animal.best_scan?.scan_date
+    ? new Date(animal.best_scan.scan_date).toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '—';
 
   return (
-    <View style={styles.card}>
-      {/* Match index badge */}
-      <View style={styles.cardIndexBadge}>
-        <Text style={styles.cardIndexText}>#{index + 1}</Text>
-      </View>
+    <View style={styles.detailCard}>
 
-      {/* Animal image */}
-      <View style={styles.cardImgWrap}>
-        {imgSrc ? (
-          <Image source={imgSrc} style={styles.cardImg} resizeMode="cover" />
-        ) : (
-          <View style={styles.cardImgPlaceholder}>
-            <FontAwesome6 name="cow" size={32} color="#fff" />
-          </View>
-        )}
-      </View>
-
-      {/* Details */}
-      <View style={styles.cardBody}>
-        {/* Name + match quality */}
-        <View style={styles.cardTopRow}>
-          <Text style={styles.cardName} numberOfLines={1}>
-            {animal.animal_name}
-          </Text>
-          <View style={[styles.qualityBadge, {backgroundColor: scoreBgColor}]}>
+      {/* Index badge (only shown when multiple matches) */}
+      {totalMatches > 1 && (
+        <View style={styles.indexBadge}>
+          <Text style={styles.indexBadgeText}>Match #{index + 1}</Text>
+          <View style={[styles.qualityDot, {backgroundColor: scoreBg}]}>
             <Text style={styles.qualityText}>{scoreLabel}</Text>
           </View>
         </View>
+      )}
 
-        {/* Category + gender */}
-        <View style={styles.badgeRow}>
-          {animal.category && (
-            <View style={styles.pill}>
-              <Text style={styles.pillText}>{animal.category_display ?? animal.category}</Text>
-            </View>
-          )}
-          {animal.gender && (
-            <View style={[styles.pill, styles.pillBlue]}>
-              <Text style={styles.pillText}>{animal.gender_display ?? animal.gender}</Text>
-            </View>
-          )}
-          {animal.is_sold && (
-            <View style={[styles.pill, styles.pillRed]}>
-              <Text style={styles.pillText}>Sold</Text>
-            </View>
-          )}
-        </View>
+      {/* Animal Identified badge */}
+      <View style={styles.identifiedBadge}>
+        <MaterialIcons name="check-circle" size={15} color="#2e7d32" />
+        <Text style={styles.identifiedText}>Animal Identified</Text>
+      </View>
 
-        {/* Owner (guest only) */}
-        {isGuest && animal.owner_name && (
-          <InfoLine icon="person" value={animal.owner_name} />
+      {/* Circular image */}
+      <View style={styles.circleImgWrap}>
+        {imgSrc ? (
+          <Image source={imgSrc} style={styles.circleImg} />
+        ) : (
+          <View style={styles.circleImgPlaceholder}>
+            <FontAwesome6 name="cow" size={48} color="#fff" />
+          </View>
         )}
+      </View>
 
-        {/* Animal details */}
+      {/* Animal name */}
+      <Text style={styles.animalName} numberOfLines={1}>
+        {animal.animal_name}
+      </Text>
+
+      {/* Badges */}
+      <View style={styles.badgeRow}>
+        {animal.category && (
+          <View style={styles.pill}>
+            <Text style={styles.pillText}>
+              {animal.category_display ?? animal.category}
+            </Text>
+          </View>
+        )}
+        {animal.gender && (
+          <View style={[styles.pill, styles.pillBlue]}>
+            <Text style={styles.pillText}>
+              {animal.gender_display ?? animal.gender}
+            </Text>
+          </View>
+        )}
+        {animal.is_sold && (
+          <View style={[styles.pill, styles.pillRed]}>
+            <Text style={styles.pillText}>Sold</Text>
+          </View>
+        )}
+      </View>
+
+      {/* ── Animal Details ────────────────────────────────────────────── */}
+      <SectionLabel label="Animal Details" />
+      <View style={styles.infoCard}>
+        {isGuest && animal.owner_name && (
+          <>
+            <DetailRow icon="person" label="Owner" value={animal.owner_name} />
+            <RowDivider />
+          </>
+        )}
         {animal.breed && (
-          <InfoLine icon="straighten" value={`Breed: ${animal.breed}`} />
+          <>
+            <DetailRow icon="straighten" label="Breed" value={animal.breed} />
+            <RowDivider />
+          </>
         )}
         {animal.age != null && (
-          <InfoLine icon="access-time" value={`Age: ${animal.age} months`} />
+          <>
+            <DetailRow icon="access-time" label="Age" value={`${animal.age} months`} />
+            <RowDivider />
+          </>
         )}
         {animal.registration_date && (
-          <InfoLine icon="calendar-today" value={`Reg: ${animal.registration_date}`} />
+          <>
+            <DetailRow icon="calendar-today" label="Registered" value={animal.registration_date} />
+            <RowDivider />
+          </>
         )}
-
-        {/* Score difference */}
-        <View style={styles.scoreLine}>
-          <MaterialIcons name="analytics" size={13} color="#aaa" />
-          <Text style={styles.scoreText}>
-            Score diff: {scoreGap.toFixed(4)}
-          </Text>
-        </View>
+        <DetailRow icon="label" label="Animal ID" value={`#${animal.animal_id}`} />
       </View>
+
+      {/* ── Scan Analysis ────────────────────────────────────────────── */}
+      <SectionLabel label="Scan Analysis" />
+      <View style={styles.infoCard}>
+        <DetailRow
+          icon="fingerprint"
+          label="Predicted ID"
+          value={animal.predicted_cattle_id ?? predictedId ?? '—'}
+        />
+        {animal.best_scan?.predicted_cattle_id && (
+          <>
+            <RowDivider />
+            <DetailRow
+              icon="assessment"
+              label="Confidence"
+              value={animal.best_scan.predicted_cattle_id}
+            />
+          </>
+        )}
+        <RowDivider />
+        <DetailRow icon="event" label="Scan Date" value={scanDate} />
+        <RowDivider />
+        <DetailRow
+          icon="analytics"
+          label="Score Diff"
+          value={scoreGap.toFixed(6)}
+          highlight={scoreLabel}
+          highlightColor={scoreBg}
+        />
+      </View>
+
+      {/* ── Nose scan image ───────────────────────────────────────────── */}
+      {noseScanImg && (
+        <>
+          <SectionLabel label="Nose Scan Image" />
+          <View style={styles.noseScanWrap}>
+            <Image
+              source={noseScanImg}
+              style={styles.noseScanImg}
+              resizeMode="cover"
+            />
+          </View>
+        </>
+      )}
     </View>
   );
 }
 
-// ─── Small helpers ─────────────────────────────────────────────────────────────
+// ─── Small shared components ──────────────────────────────────────────────────
+
 function Header({navigation, isGuest}) {
   return (
     <View style={styles.header}>
@@ -233,19 +266,57 @@ function Header({navigation, isGuest}) {
   );
 }
 
-function InfoLine({icon, value}) {
+function SummaryItem({icon, iconColor, label, value}) {
   return (
-    <View style={styles.infoLine}>
-      <MaterialIcons name={icon} size={13} color="#888" />
-      <Text style={styles.infoLineText} numberOfLines={1}>{value}</Text>
+    <View style={styles.summaryItem}>
+      <MaterialIcons name={icon} size={18} color={iconColor} />
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={styles.summaryValue} numberOfLines={1}>{value}</Text>
     </View>
   );
 }
 
-// ─── Styles ────────────────────────────────────────────────────────────────────
+function SectionLabel({label}) {
+  return <Text style={styles.sectionLabel}>{label}</Text>;
+}
+
+function RowDivider() {
+  return <View style={styles.rowDivider} />;
+}
+
+function DetailRow({icon, label, value, highlight, highlightColor}) {
+  return (
+    <View style={styles.detailRow}>
+      <MaterialIcons name={icon} size={18} color={color.Secondry} style={styles.detailIcon} />
+      <Text style={styles.detailLabel}>{label}</Text>
+      <View style={styles.detailValueWrap}>
+        <Text style={styles.detailValue} numberOfLines={2}>{value}</Text>
+        {highlight && (
+          <View style={[styles.highlightBadge, {backgroundColor: highlightColor}]}>
+            <Text style={styles.highlightText}>{highlight}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function ScanAgainBtn({navigation}) {
+  return (
+    <TouchableOpacity
+      style={styles.scanAgainBtn}
+      onPress={() => navigation.goBack()}>
+      <MaterialIcons name="qr-code-scanner" size={18} color="#fff" />
+      <Text style={styles.scanAgainBtnText}>Scan Again</Text>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {flex: 1, backgroundColor: '#f0f0f0'},
 
+  // ── Header ──────────────────────────────────────────────────────────────────
   header: {
     height: 60,
     backgroundColor: color.Secondry,
@@ -266,99 +337,189 @@ const styles = StyleSheet.create({
   scroll: {padding: 14, paddingBottom: 36},
 
   // ── Summary bar ─────────────────────────────────────────────────────────────
-  summaryCard: {
+  summaryBar: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 18,
+    borderRadius: 14,
+    paddingVertical: 12,
+    marginBottom: 16,
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowRadius: 5,
     shadowOffset: {width: 0, height: 2},
-    alignItems: 'center',
   },
-  summaryItem: {flex: 1, alignItems: 'center', gap: 4},
-  summaryLabel: {fontSize: 10, color: '#999', fontWeight: '600', textTransform: 'uppercase'},
-  summaryValue: {fontSize: 13, fontWeight: '800', color: '#222'},
-  summaryDivider: {width: 1, height: 36, backgroundColor: '#eee'},
-
-  sectionTitle: {
-    fontSize: 14,
+  summaryItem: {flex: 1, alignItems: 'center', gap: 3},
+  summaryLabel: {
+    fontSize: 9,
+    color: '#999',
     fontWeight: '700',
-    color: '#666',
-    marginBottom: 10,
     textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    letterSpacing: 0.4,
   },
+  summaryValue: {fontSize: 12, fontWeight: '800', color: '#222'},
+  summaryDivider: {width: 1, backgroundColor: '#eee'},
 
-  // ── Animal card ─────────────────────────────────────────────────────────────
-  card: {
-    flexDirection: 'row',
+  // ── Detail card (main per-animal card) ──────────────────────────────────────
+  detailCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    marginBottom: 12,
-    overflow: 'hidden',
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 16,
     elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: {width: 0, height: 2},
-  },
-  cardIndexBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: color.Secondry,
-    borderRadius: 10,
-    width: 22,
-    height: 22,
-    justifyContent: 'center',
+    shadowRadius: 8,
+    shadowOffset: {width: 0, height: 3},
     alignItems: 'center',
-    zIndex: 1,
   },
-  cardIndexText: {color: '#fff', fontSize: 11, fontWeight: '800'},
-  cardImgWrap: {width: 100, minHeight: 130},
-  cardImg: {width: '100%', height: '100%'},
-  cardImgPlaceholder: {
+
+  // ── Index + quality (multi-match only) ──────────────────────────────────────
+  indexBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  indexBadgeText: {fontSize: 13, fontWeight: '700', color: '#666'},
+  qualityDot: {
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  qualityText: {color: '#fff', fontSize: 11, fontWeight: '700'},
+
+  // ── Animal Identified badge ──────────────────────────────────────────────────
+  identifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e8f5e9',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    gap: 6,
+    marginBottom: 16,
+  },
+  identifiedText: {color: '#2e7d32', fontWeight: '700', fontSize: 13},
+
+  // ── Circular image ───────────────────────────────────────────────────────────
+  circleImgWrap: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: 'hidden',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: {width: 0, height: 4},
+    marginBottom: 14,
+  },
+  circleImg: {width: '100%', height: '100%'},
+  circleImgPlaceholder: {
     flex: 1,
     backgroundColor: color.Secondry,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 130,
   },
-  cardBody: {flex: 1, padding: 12, gap: 5},
 
-  cardTopRow: {
+  // ── Name + badges ────────────────────────────────────────────────────────────
+  animalName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#222',
+    textAlign: 'center',
+    marginBottom: 10,
+    textTransform: 'capitalize',
+  },
+  badgeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 8,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 18,
   },
-  cardName: {fontSize: 16, fontWeight: '800', color: '#222', flex: 1, marginRight: 6},
-  qualityBadge: {
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  qualityText: {color: '#fff', fontSize: 10, fontWeight: '700'},
-
-  badgeRow: {flexDirection: 'row', gap: 6, flexWrap: 'wrap'},
   pill: {
     backgroundColor: color.Secondry,
-    borderRadius: 12,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
   },
   pillBlue: {backgroundColor: '#1565c0'},
   pillRed: {backgroundColor: '#c62828'},
-  pillText: {color: '#fff', fontSize: 10, fontWeight: '700'},
+  pillText: {color: '#fff', fontSize: 12, fontWeight: '700'},
 
-  infoLine: {flexDirection: 'row', alignItems: 'center', gap: 5},
-  infoLineText: {fontSize: 12, color: '#666', flex: 1},
+  // ── Section label ────────────────────────────────────────────────────────────
+  sectionLabel: {
+    alignSelf: 'flex-start',
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#999',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
 
-  scoreLine: {flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2},
-  scoreText: {fontSize: 11, color: '#bbb'},
+  // ── Info card ────────────────────────────────────────────────────────────────
+  infoCard: {
+    alignSelf: 'stretch',
+    backgroundColor: '#f8f8f8',
+    borderRadius: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 14,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 11,
+  },
+  detailIcon: {marginRight: 12},
+  detailLabel: {
+    flex: 1,
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '600',
+  },
+  detailValueWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  detailValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#222',
+    textAlign: 'right',
+    flexShrink: 1,
+  },
+  highlightBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  highlightText: {color: '#fff', fontSize: 10, fontWeight: '700'},
+  rowDivider: {height: 1, backgroundColor: '#eee'},
+
+  // ── Nose scan image ──────────────────────────────────────────────────────────
+  noseScanWrap: {
+    alignSelf: 'stretch',
+    height: 200,
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginBottom: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    shadowOffset: {width: 0, height: 2},
+  },
+  noseScanImg: {width: '100%', height: '100%'},
 
   // ── No match ─────────────────────────────────────────────────────────────────
   noMatchWrap: {
@@ -381,7 +542,12 @@ const styles = StyleSheet.create({
     shadowOffset: {width: 0, height: 4},
     marginBottom: 20,
   },
-  noMatchTitle: {fontSize: 20, fontWeight: 'bold', color: '#444', marginBottom: 10},
+  noMatchTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#444',
+    marginBottom: 10,
+  },
   noMatchHint: {
     fontSize: 14,
     color: '#888',
@@ -404,13 +570,14 @@ const styles = StyleSheet.create({
   // ── Scan again ───────────────────────────────────────────────────────────────
   scanAgainBtn: {
     flexDirection: 'row',
+    alignSelf: 'stretch',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: color.Secondry,
     borderRadius: 14,
     paddingVertical: 15,
     gap: 8,
-    marginTop: 8,
+    marginTop: 4,
     elevation: 3,
     shadowColor: '#000',
     shadowOpacity: 0.12,
