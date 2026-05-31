@@ -55,6 +55,16 @@ export default function HomeScreen({navigation}) {
     return unsub;
   }, [navigation, dispatch]);
 
+  // ─── Navigate to Login when user logs out ──────────────────────────────────
+  useEffect(() => {
+    if (!user) {
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'Login'}],
+      });
+    }
+  }, [user, navigation]);
+
   // ─── Show fetch error once ────────────────────────────────────────────────
   useEffect(() => {
     if (!error) {
