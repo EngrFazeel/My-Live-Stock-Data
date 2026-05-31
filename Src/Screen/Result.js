@@ -65,8 +65,8 @@ export default function ResultScreen({navigation, route}) {
         <View style={styles.summaryBar}>
           <SummaryItem icon="check-circle" iconColor="#2e7d32" label="Matches Found" value={String(totalMatches)} />
           <View style={styles.summaryDivider} />
-          <SummaryItem icon="stars" iconColor={color.Secondry} label="Scan Score" value={`${(scanScore * 100).toFixed(2)}%`} />
-          <View style={styles.summaryDivider} />
+          {/* <SummaryItem icon="stars" iconColor={color.Secondry} label="Scan Score" value={`${(scanScore * 100).toFixed(2)}%`} />
+          <View style={styles.summaryDivider} /> */}
           <SummaryItem icon="fingerprint" iconColor="#555" label="Cattle ID" value={predictedId} />
         </View>
 
@@ -203,7 +203,7 @@ function AnimalDetailCard({animal, index, totalMatches, isGuest, topPredictedId}
       {/* ── Scan Analysis ────────────────────────────────────────────── */}
       <SectionLabel label="Scan Analysis" />
       <View style={styles.infoCard}>
-        <DetailRow
+        {/* <DetailRow
           icon="fingerprint"
           label="Predicted ID"
           value={animal.predicted_cattle_id ?? topPredictedId ?? '—'}
@@ -218,16 +218,16 @@ function AnimalDetailCard({animal, index, totalMatches, isGuest, topPredictedId}
             />
           </>
         )}
-        <RowDivider />
+        <RowDivider /> */}
         <DetailRow icon="event" label="Scan Date" value={scanDate} />
-        <RowDivider />
+        {/* <RowDivider />
         <DetailRow
           icon="analytics"
           label="Score Diff"
           value={scoreGap.toFixed(6)}
           highlight={scoreLabel}
           highlightColor={scoreBg}
-        />
+        /> */}
       </View>
 
       {/* ── Nose scan image ───────────────────────────────────────────── */}
