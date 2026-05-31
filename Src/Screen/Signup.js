@@ -64,16 +64,16 @@ export default function SignupScreen({ navigation }) {
     successHandled.current = true;
 
     showAlert({
-      title:       'Signup Successful!',
-      message:     'Your account has been created.\nPlease login to continue.',
+      title:       'Successful Signup.',
+      message:     'Your account has been created. Please login to continue.',
       type:        'success',
       confirmText: 'Go to Login',
       onConfirm:   () => {
         setForm(EMPTY_FORM);
-        dispatch(logout());           // clears any auto-login tokens from signup
+        dispatch(logout());
         dispatch(clearAuthMessages());
         successHandled.current = false;
-        navigation.replace('Login');  // replace so back button won't return to Signup
+        navigation.replace('Login');
       },
     });
   }, [success]);

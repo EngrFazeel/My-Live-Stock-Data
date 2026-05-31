@@ -30,6 +30,13 @@ export default function LoginScreen({ navigation }) {
   // Prevents double-firing if success re-renders before navigation completes
   const successHandled = useRef(false);
 
+  // ─── Clear any stale auth messages left by logout / signup ───────────────
+  useEffect(() => {
+    dispatch(clearAuthMessages());
+    successHandled.current = false;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ─── Error alert ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!error) return;
@@ -67,19 +74,11 @@ export default function LoginScreen({ navigation }) {
         console.warn('AsyncStorage save failed:', e.message);
       }
 
-      // Clear redux messages and reset form
+      // Clear redux messages, reset form, go directly to Home
       dispatch(clearAuthMessages());
       setCnic('');
       setPassword('');
-
-      // Show success alert then navigate
-      showAlert({
-        title:       'Welcome!',
-        message:     'Login successful!',
-        type:        'success',
-        confirmText: 'Continue',
-        onConfirm:   () => navigation.replace('Home'),
-      });
+      navigation.replace('Home');
     };
 
     persistAndNavigate();

@@ -28,6 +28,29 @@ export const identifyNoseScan = createAsyncThunk(
   },
 );
 
+// No auth token needed — ApiService won't inject one when _token is null (guest)
+export const guestIdentifyNoseScan = createAsyncThunk(
+  'scan/guestIdentify',
+  async (imageUri, {rejectWithValue}) => {
+    try {
+      const formData = new FormData();
+      formData.append('scan_image', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'nose_scan.jpg',
+      });
+      const res = await ApiService.post(
+        ENDPOINTS.GUEST_IDENTIFY_NOSE_SCAN,
+        formData,
+        {headers: {'Content-Type': 'multipart/form-data'}},
+      );
+      return res.data;
+    } catch (err) {
+      return rejectWithValue(err);
+    }
+  },
+);
+
 const scanSlice = createSlice({
   name: 'scan',
   initialState: {
@@ -42,20 +65,27 @@ const scanSlice = createSlice({
     },
   },
   extraReducers: builder => {
+    const pending = state => {
+      state.loading = true;
+      state.error = null;
+      state.result = null;
+    };
+    const fulfilled = (state, action) => {
+      state.loading = false;
+      state.result = action.payload;
+    };
+    const rejected = (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    };
+
     builder
-      .addCase(identifyNoseScan.pending, state => {
-        state.loading = true;
-        state.error = null;
-        state.result = null;
-      })
-      .addCase(identifyNoseScan.fulfilled, (state, action) => {
-        state.loading = false;
-        state.result = action.payload;
-      })
-      .addCase(identifyNoseScan.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
+      .addCase(identifyNoseScan.pending, pending)
+      .addCase(identifyNoseScan.fulfilled, fulfilled)
+      .addCase(identifyNoseScan.rejected, rejected)
+      .addCase(guestIdentifyNoseScan.pending, pending)
+      .addCase(guestIdentifyNoseScan.fulfilled, fulfilled)
+      .addCase(guestIdentifyNoseScan.rejected, rejected);
   },
 });
 

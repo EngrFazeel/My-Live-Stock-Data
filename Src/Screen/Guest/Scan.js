@@ -16,14 +16,22 @@ import {launchCamera, launchImageLibrary} from 'react-native-image-picker';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FontAwesome6 from 'react-native-vector-icons/FontAwesome6';
 import {color} from '../../Color';
-import {identifyNoseScan, clearScanResult} from '../../Redux/Slices/scanSlice';
+import {
+  identifyNoseScan,
+  guestIdentifyNoseScan,
+  clearScanResult,
+} from '../../Redux/Slices/scanSlice';
 import {showAlert} from '../../Utils/SweetAlert';
 
 export default function ScanScreen({navigation}) {
   const dispatch = useDispatch();
   const {loading} = useSelector(s => s.scan);
+  const {accessToken} = useSelector(s => s.auth);
+  const isGuest = !accessToken;
+
   const [selectedImage, setSelectedImage] = useState(null);
 
+  // ── Permissions ────────────────────────────────────────────────────────────
   const requestCameraPermission = async () => {
     if (Platform.OS === 'android') {
       try {
@@ -38,9 +46,10 @@ export default function ScanScreen({navigation}) {
     return true;
   };
 
+  // ── Image pickers ──────────────────────────────────────────────────────────
   const openCamera = async () => {
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) {
+    const ok = await requestCameraPermission();
+    if (!ok) {
       showAlert({
         title: 'Permission Denied',
         message: 'Camera permission is required to scan.',
@@ -49,11 +58,7 @@ export default function ScanScreen({navigation}) {
       });
       return;
     }
-    const result = await launchCamera({
-      mediaType: 'photo',
-      quality: 0.8,
-      cameraType: 'back',
-    });
+    const result = await launchCamera({mediaType: 'photo', quality: 0.8});
     if (result.assets?.[0]) {
       setSelectedImage(result.assets[0]);
     }
@@ -66,14 +71,22 @@ export default function ScanScreen({navigation}) {
     }
   };
 
+  // ── Identify ───────────────────────────────────────────────────────────────
   const handleIdentify = async () => {
     if (!selectedImage) {
       return;
     }
     dispatch(clearScanResult());
-    const action = await dispatch(identifyNoseScan(selectedImage.uri));
-    if (identifyNoseScan.fulfilled.match(action)) {
-      navigation.navigate('Result', {result: action.payload});
+
+    let action;
+    if (isGuest) {
+      action = await dispatch(guestIdentifyNoseScan(selectedImage.uri));
+    } else {
+      action = await dispatch(identifyNoseScan(selectedImage.uri));
+    }
+
+    if (action.payload && !action.error) {
+      navigation.navigate('Result', {result: action.payload, isGuest});
     } else {
       const errMsg =
         typeof action.payload === 'string'
@@ -95,11 +108,16 @@ export default function ScanScreen({navigation}) {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Nose Scan</Text>
+        {isGuest && (
+          <View style={styles.guestBadge}>
+            <Text style={styles.guestBadgeText}>Guest</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.body}>
         {!selectedImage ? (
-          /* ── No image selected ─────────────────────────────────────── */
+          /* ── No image selected ───────────────────────────────────────────── */
           <>
             <View style={styles.placeholderWrap}>
               <View style={styles.placeholderCircle}>
@@ -107,7 +125,9 @@ export default function ScanScreen({navigation}) {
               </View>
               <Text style={styles.placeholderTitle}>Identify Animal by Nose</Text>
               <Text style={styles.placeholderHint}>
-                Take a clear photo of the animal's nose or upload from gallery
+                {isGuest
+                  ? 'Search across all registered animals — no login needed'
+                  : 'Search your registered animals by nose pattern'}
               </Text>
             </View>
 
@@ -131,7 +151,7 @@ export default function ScanScreen({navigation}) {
             </View>
           </>
         ) : (
-          /* ── Image selected ────────────────────────────────────────── */
+          /* ── Image selected ──────────────────────────────────────────────── */
           <>
             <View style={styles.previewWrap}>
               <Image
@@ -145,7 +165,11 @@ export default function ScanScreen({navigation}) {
                 <MaterialIcons name="close" size={18} color="#fff" />
               </TouchableOpacity>
               <View style={styles.previewBadge}>
-                <MaterialIcons name="center-focus-strong" size={14} color="#fff" />
+                <MaterialIcons
+                  name="center-focus-strong"
+                  size={14}
+                  color="#fff"
+                />
                 <Text style={styles.previewBadgeText}>Ready to scan</Text>
               </View>
             </View>
@@ -154,7 +178,11 @@ export default function ScanScreen({navigation}) {
               <TouchableOpacity
                 style={[styles.pickBtn, styles.pickBtnOutline]}
                 onPress={openCamera}>
-                <MaterialIcons name="camera-alt" size={22} color={color.Secondry} />
+                <MaterialIcons
+                  name="camera-alt"
+                  size={22}
+                  color={color.Secondry}
+                />
                 <Text style={[styles.pickBtnText, {color: color.Secondry}]}>
                   Retake
                 </Text>
@@ -176,7 +204,9 @@ export default function ScanScreen({navigation}) {
 
             {loading && (
               <Text style={styles.scanningHint}>
-                Analyzing nose pattern, please wait…
+                {isGuest
+                  ? 'Searching across all animals…'
+                  : 'Analyzing nose pattern…'}
               </Text>
             )}
           </>
@@ -192,10 +222,20 @@ const styles = StyleSheet.create({
   header: {
     height: 60,
     backgroundColor: color.Secondry,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 10,
   },
   headerTitle: {fontSize: 22, color: '#fff', fontWeight: 'bold'},
+  guestBadge: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  guestBadgeText: {color: '#fff', fontSize: 12, fontWeight: '700'},
 
   body: {flex: 1, paddingHorizontal: 24, justifyContent: 'center'},
 
@@ -278,10 +318,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     gap: 8,
     elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    shadowOffset: {width: 0, height: 2},
   },
   pickBtnOutline: {
     backgroundColor: '#fff',
@@ -291,11 +327,5 @@ const styles = StyleSheet.create({
   },
   pickBtnDisabled: {opacity: 0.6},
   pickBtnText: {color: '#fff', fontSize: 15, fontWeight: '700'},
-
-  scanningHint: {
-    textAlign: 'center',
-    color: '#888',
-    fontSize: 13,
-    marginTop: 16,
-  },
+  scanningHint: {textAlign: 'center', color: '#888', fontSize: 13, marginTop: 16},
 });

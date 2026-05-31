@@ -23,7 +23,8 @@ export const ENDPOINTS = {
   DELETE_ANIMAL: id => `animals/${id}/`,
 
   // Nose Scan
-  IDENTIFY_NOSE_SCAN: 'animals/nose-scans/identify/',
+  IDENTIFY_NOSE_SCAN:       'animals/nose-scans/identify/',
+  GUEST_IDENTIFY_NOSE_SCAN: 'animals/nose-scans/guest-identify/',
 
   // Ownership Transfers
   GET_TRANSFERS:    'animals/transfers/',
