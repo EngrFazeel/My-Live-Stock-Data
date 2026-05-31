@@ -92,7 +92,17 @@ export default function HomeScreen({navigation}) {
       type: 'confirm',
       confirmText: 'Yes, Logout',
       cancelText: 'Cancel',
-      onConfirm: () => dispatch(logoutUser()),
+      onConfirm: () => {
+        dispatch(logoutUser()).then(() => {
+          showAlert({
+            title: 'Logged Out',
+            message: 'You have been logged out successfully.',
+            type: 'success',
+            confirmText: 'OK',
+            onConfirm: () => navigation.replace('Login'),
+          });
+        });
+      },
     });
   };
 
